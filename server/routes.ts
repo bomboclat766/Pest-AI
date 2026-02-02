@@ -10,7 +10,7 @@ import { z } from "zod";
 const ai = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "dummy",
   httpOptions: {
-    apiVersion: "v1beta",
+    apiVersion: "",
     baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
   },
 });
@@ -40,17 +40,15 @@ export async function registerRoutes(
       const systemPrompt = `You are Termipest assistant: an expert pest-control advisor focused on practical, safe, and legal pest-control guidance in Kenya. Be concise, helpful, and ask clarifying questions when the user's input lacks detail. Prioritize safety: never provide instructions that could be dangerous (e.g., unsafe chemical mixing, instructions to self-administer medical treatments) — instead recommend contacting professionals and following product labels and local regulations.`;
 
       try {
-        // Try Gemini
-        const model = ai.getGenerativeModel({ 
-            model: "gemini-2.5-flash",
-            systemInstruction: systemPrompt
+        // Try Gemini using the new SDK API
+        const result = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [
+            { role: "user", parts: [{ text: systemPrompt + "\n\nUser question: " + message }] }
+          ],
         });
         
-        const result = await model.generateContent({
-            contents: [{ role: "user", parts: [{ text: message }] }],
-        });
-        
-        const response = result.response.text();
+        const response = result.text || "";
         
         res.json({
           response,
