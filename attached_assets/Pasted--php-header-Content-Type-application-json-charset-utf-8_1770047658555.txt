@@ -1,0 +1,434 @@
+<?php
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+
+// Load .env file if present (simple parser). This helps local development: place GEMINI_API_KEY in a .env file at project root.
+$envPath = __DIR__ . '/.env';
+if (file_exists($envPath)) {
+  $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+  foreach ($lines as $line) {
+    $line = trim($line);
+    if ($line === '' || strpos($line, '#') === 0) continue;
+    if (strpos($line, '=') === false) continue;
+    list($k, $v) = explode('=', $line, 2);
+    $k = trim($k);
+    $v = trim($v);
+    if ((substr($v,0,1) === '"' && substr($v,-1) === '"') || (substr($v,0,1) === "'" && substr($v,-1) === "'")) {
+      $v = substr($v,1,-1);
+    }
+    putenv("$k=$v");
+    $_ENV[$k] = $v;
+    $_SERVER[$k] = $v;
+  }
+}
+
+// Look for Gemini/Google keys in environment. Support multiple keys (comma-separated) to allow automatic rotation.
+function get_gemini_keys() {
+  $keys = [];
+  // Preferred env names
+  $single = getenv('GEMINI_API_KEY') ?: (isset($_SERVER['GEMINI_API_KEY']) ? $_SERVER['GEMINI_API_KEY'] : null);
+  if ($single) $keys[] = trim($single);
+  $multi = getenv('GEMINI_API_KEYS') ?: (isset($_SERVER['GEMINI_API_KEYS']) ? $_SERVER['GEMINI_API_KEYS'] : null);
+  if ($multi) {
+    foreach (explode(',', $multi) as $k) {
+      $k = trim($k);
+      if ($k && !in_array($k, $keys, true)) $keys[] = $k;
+    }
+  }
+
+  // Backwards compatibility: if an OPENAI_API_KEY is present and looks like a Google key, include it
+  $legacy = getenv('OPENAI_API_KEY') ?: (isset($_SERVER['OPENAI_API_KEY']) ? $_SERVER['OPENAI_API_KEY'] : null);
+  if ($legacy && preg_match('/^AIza/', $legacy)) {
+    if (!in_array($legacy, $keys, true)) $keys[] = trim($legacy);
+  }
+  $legacyMulti = getenv('OPENAI_API_KEYS') ?: (isset($_SERVER['OPENAI_API_KEYS']) ? $_SERVER['OPENAI_API_KEYS'] : null);
+  if ($legacyMulti) {
+    foreach (explode(',', $legacyMulti) as $k) {
+      $k = trim($k);
+      if ($k && preg_match('/^AIza/', $k) && !in_array($k, $keys, true)) $keys[] = $k;
+    }
+  }
+  return $keys;
+}
+
+// Helper to detect whether a key looks like a Google API key (starts with 'AIza')
+function is_google_key($key) {
+  return preg_match('/^AIza/', $key) === 1;
+}
+
+// Lightweight Google/Gemini key check: call models list endpoint with API key parameter
+function check_google_key_valid($key) {
+  $url = 'https://generativeai.googleapis.com/v1/models?key=' . urlencode($key);
+  $ch = curl_init($url);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  $res = curl_exec($ch);
+  $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  return ($http >= 200 && $http < 300);
+}
+
+// GET requests return status only (do not expose keys). 'gemini' true if any key configured; 'live' true if at least one key looks valid.
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+  $keys = get_gemini_keys();
+  $has = (bool)count($keys);
+  $live = false;
+  foreach ($keys as $k) {
+    if (check_google_key_valid($k)) { $live = true; break; }
+  }
+  echo json_encode(['gemini' => $has, 'live' => $live]);
+  exit;
+}
+
+// Only accept POST for chat requests
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+  echo json_encode(['error' => 'Invalid request method']);
+  exit;
+}
+
+$body = file_get_contents('php://input');
+if (!$body) {
+  echo json_encode(['error' => 'Empty request body']);
+  exit;
+}
+$data = json_decode($body, true);
+if (!isset($data['question']) || trim($data['question']) === '') {
+  echo json_encode(['error' => 'No question provided']);
+  exit;
+}
+$question = trim($data['question']);
+
+// Accept model/live_only (available to all code paths)
+$bodyModel = isset($data['model']) && is_string($data['model']) && trim($data['model']) !== '' ? trim($data['model']) : null;
+$liveOnly = isset($data['live_only']) && ($data['live_only'] === true || $data['live_only'] === 'true' || $data['live_only'] === 1 || $data['live_only'] === '1');
+
+// Local fallback generator used when Gemini (Google) is not available or returns an error.
+function get_local_reply($question) {
+  $q = strtolower(trim($question));
+
+  // simple helper
+  $has = function($words) use ($q) {
+    foreach ((array)$words as $w) if (strpos($q, $w) !== false) return true;
+    return false;
+  };
+
+  // Ask clarifying questions when ambiguous
+  if (strlen($q) < 10 || $has(['what is','who is','help','tell me'])) {
+    return ['answer' => "Hi — I can help with pest prevention, identification, and treatment advice. Tell me what pest you have (rats, termites, cockroaches, mosquitoes, bedbugs, ants, fleas, flies), where you see them, and any photos or symptoms. I will then give step-by-step, safe guidance.", 'note' => 'using local fallback'];
+  }
+
+  // Rodents
+  if ($has(['rodent','rat','rats','mice','mouse'])) {
+    $steps = [
+      "Inspect: look for droppings, gnaw marks, and entry points around walls, pipes, and skirting.",
+      "Sanitation: remove food sources (store food in sealed containers), clean crumbs/spills, secure pet food.",
+      "Exclude: seal holes and gaps larger than 6mm using steel wool, metal mesh, or expanding foam on exterior and interior entry points.",
+      "Trapping: use snap traps or secure indoor live traps; place alongside walls where droppings are found. Avoid poison inside homes where pets/children are present.",
+      "Professional help: call professionals if infestation is large, if you suspect baiting is required outdoors, if you have health concerns, or if exclusion is difficult."
+    ];
+    return ['answer' => "For rodents: " . implode(' ', $steps) . " If you want, tell me where you mainly see them (kitchen, roof, store-room) and I can give a tailored plan.", 'note' => 'using local fallback'];
+  }
+
+  // Termites
+  if ($has(['termite','termites','woodworm'])) {
+    $steps = [
+      "Check for mud tubes on foundations and soft or hollow-sounding timber.",
+      "Reduce wood-to-soil contact and remove damp timber where possible.",
+      "Avoid DIY insecticide drenches for large infestations — contact a licensed pest control company for inspection and a treatment plan (chemical or baiting).",
+      "Prevent: improve drainage, ventilate crawl spaces, store firewood away from the house."
+    ];
+    return ['answer' => "Termite guidance: " . implode(' ', $steps), 'note' => 'using local fallback'];
+  }
+
+  // Cockroaches
+  if ($has(['cockroach','cockroaches','roach'])) {
+    $steps = [
+      "Sanitation: remove crumbs, wash dishes promptly, keep bins sealed.",
+      "Baiting: use gel baits in cracks and crevices, away from children/pets.",
+      "Crack sealing: seal gaps behind appliances and around pipes.",
+      "Call professionals if you see many cockroaches or if baits are ineffective."
+    ];
+    return ['answer' => "Cockroach steps: " . implode(' ', $steps), 'note' => 'using local fallback'];
+  }
+
+  // Mosquitoes
+  if ($has(['mosquito','mosquitoes','aedes'])) {
+    $steps = [
+      "Eliminate standing water (pots, drains, puddles) where mosquitoes breed.",
+      "Use screens, bed nets, and repellents when necessary.",
+      "Consider larvicidal treatment of persistent water sources if appropriate (professional advice recommended)."
+    ];
+    return ['answer' => "Mosquito prevention: " . implode(' ', $steps), 'note' => 'using local fallback'];
+  }
+
+  // Bed bugs
+  if ($has(['bed bug','bed bugs','bedbugs'])) {
+    $steps = [
+      "Confirm: look for blood spots on sheets and small brown insects in mattress seams.",
+      "Contain: wash bedding in hot water, vacuum mattress seams, and use mattress encasements.",
+      "Professional heat treatment or insecticide treatment is usually required for elimination."
+    ];
+    return ['answer' => "Bed bug advice: " . implode(' ', $steps), 'note' => 'using local fallback'];
+  }
+
+  // Ants
+  if ($has(['ant','ants'])) {
+    $steps = [
+      "Identify entry trails and remove food sources.",
+      "Use bait stations rather than sprays to target colonies.",
+      "Seal entry points and keep surfaces clean."
+    ];
+    return ['answer' => "Ant control: " . implode(' ', $steps), 'note' => 'using local fallback'];
+  }
+
+  // Fleas
+  if ($has(['flea','fleas'])) {
+    $steps = [
+      "Treat pets with vet-approved flea control, wash bedding, and vacuum carpets frequently.",
+      "Consider insecticidal treatment for indoor heavy infestations and treat outdoor resting areas."
+    ];
+    return ['answer' => "Flea control: " . implode(' ', $steps), 'note' => 'using local fallback'];
+  }
+
+  // Flies
+  if ($has(['fly','flies'])) {
+    $steps = [
+      "Manage waste and keep bins sealed.",
+      "Use screens and fly traps where appropriate.",
+      "Remove breeding material such as exposed food or animal waste."
+    ];
+    return ['answer' => "Fly control: " . implode(' ', $steps), 'note' => 'using local fallback'];
+  }
+
+  // Generic: if user asks for chemicals or medical actions, refuse and advise professionals
+  if ($has(['poison','mix','drink','inject','harmful','toxic'])) {
+    return ['answer' => "I cannot provide instructions that could be dangerous or harmful. For chemical or medical interventions, consult a licensed professional and follow product labels and local regulations.", 'note' => 'safety-first'];
+  }
+
+  // If not matched, provide general guidance and ask for clarifying details
+  return ['answer' => "I can help with pest ID, prevention, and safe treatment. Tell me: which pest (or describe what you see), where it is (kitchen, bedroom, yard), and any photos or details. I will then provide step-by-step advice and indicate when to call a professional.", 'note' => 'using local fallback'];
+}
+
+// Try keys with automatic rotation and clearer error handling.
+$keys = get_gemini_keys();
+if (count($keys) > 0) {
+  $stream = isset($_GET['stream']) && $_GET['stream'] == '1';
+
+  $model = getenv('GEMINI_MODEL') ?: 'text-bison-001';
+
+  // Strong system prompt to make the assistant act like an expert, safe, and local-aware pest-control advisor.
+  $systemPrompt = "You are Termipest assistant: an expert pest-control advisor focused on practical, safe, and legal pest-control guidance in Kenya. Be concise, helpful, and ask clarifying questions when the user's input lacks detail. Prioritize safety: never provide instructions that could be dangerous (e.g., unsafe chemical mixing, instructions to self-administer medical treatments) — instead recommend contacting professionals and following product labels and local regulations. When asked to identify a pest, ask for distinguishing details or photos. Provide step-by-step preventative measures, treatment options, and when to seek professional help. If uncertain, say so rather than guess.";
+
+  $payload = [
+    'model' => $model,
+    'messages' => [
+      ['role' => 'system', 'content' => $systemPrompt],
+      ['role' => 'user', 'content' => $question]
+    ],
+    'max_tokens' => 800,
+    'temperature' => 0.2,
+  ];
+
+  // Accept client-requested model and live_only flag (from JSON body)
+  $bodyModel = isset($data['model']) && is_string($data['model']) && trim($data['model']) !== '' ? trim($data['model']) : null;
+  $liveOnly = isset($data['live_only']) && ($data['live_only'] === true || $data['live_only'] === 'true' || $data['live_only'] === 1 || $data['live_only'] === '1');
+  if ($bodyModel) $payload['model'] = $bodyModel;
+
+  
+
+  // Helper to perform one non-stream call to Google Generative API (Text Bison)
+  function call_google_once($key, $payload) {
+    // Build a single prompt string from system + user messages
+    $sys = '';
+    $user = '';
+    if (!empty($payload['messages']) && is_array($payload['messages'])) {
+      foreach ($payload['messages'] as $m) {
+        if ($m['role'] === 'system') $sys .= $m['content'] . "\n";
+        if ($m['role'] === 'user') $user .= $m['content'] . "\n";
+      }
+    }
+    $prompt = trim($sys . "\nUser: " . $user);
+
+    // Map some parameters
+    $temp = isset($payload['temperature']) ? floatval($payload['temperature']) : 0.2;
+    $max = isset($payload['max_tokens']) ? intval($payload['max_tokens']) : 768;
+    if ($max > 1024) $max = 1024;
+
+    // Choose a Google model name (text-bison-001 by default)
+    $model = 'text-bison-001';
+    if (!empty($payload['model']) && is_string($payload['model'])) {
+      if (stripos($payload['model'], 'bison') !== false || stripos($payload['model'], 'gemini') !== false) {
+        if (stripos($payload['model'], 'gemini') !== false) {
+          // map generic gemini to a text-bison fallback if unknown
+          $model = 'text-bison-001';
+        } else {
+          $model = $payload['model'];
+        }
+      }
+    }
+
+    $url = 'https://generativeai.googleapis.com/v1/models/' . $model . ':generate?key=' . urlencode($key);
+
+    $body = [
+      'prompt' => ['text' => $prompt],
+      'temperature' => $temp,
+      'maxOutputTokens' => $max
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+    $result = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err = null;
+    if (curl_errno($ch)) $err = curl_error($ch);
+    curl_close($ch);
+
+    return [$httpCode, $result, $err];
+  }
+
+  $selectedKey = null;
+  $lastGeminiError = null;
+
+  if ($stream) {
+    // Find a Gemini/Google key that works
+    foreach ($keys as $k) {
+      if (check_google_key_valid($k)) { $selectedKey = $k; break; }
+    }
+
+    if (!$selectedKey) {
+      if ($liveOnly) {
+        http_response_code(503);
+        echo json_encode(['error' => 'No usable Gemini key available (quota or auth issue)']);
+        exit;
+      }
+      $fallback = get_local_reply($question);
+      $fallback['note'] = 'Gemini error: no usable key — using local fallback';
+      echo json_encode($fallback);
+      exit;
+    }
+
+    // Call Google once and simulate streaming by chunking the returned text
+    list($httpCode, $result, $curlErr) = call_google_once($selectedKey, $payload);
+    if ($curlErr) { http_response_code(502); echo json_encode(['error' => $curlErr]); exit; }
+    if ($httpCode < 200 || $httpCode >= 300) {
+      $err = json_decode($result, true);
+      $msg = $err['error']['message'] ?? 'Google API error';
+      if ($liveOnly) { http_response_code(503); echo json_encode(['error' => $msg]); exit; }
+      $fallback = get_local_reply($question);
+      $fallback['note'] = 'Google API error: ' . $msg . ' — using local fallback';
+      echo json_encode($fallback);
+      exit;
+    }
+
+    $resp = json_decode($result, true);
+    $text = '';
+    if (!empty($resp['candidates']) && is_array($resp['candidates']) && !empty($resp['candidates'][0]['content'])) {
+      $text = $resp['candidates'][0]['content'];
+    } elseif (!empty($resp['output']) && is_string($resp['output'])) {
+      $text = $resp['output'];
+    } elseif (!empty($resp['candidates']) && is_array($resp['candidates']) && !empty($resp['candidates'][0]['output'])) {
+      $text = $resp['candidates'][0]['output'];
+    }
+
+    // Simulate SSE streaming: chunk the text and send as JSON pieces with key 'text'
+    ini_set('output_buffering', 'off');
+    ini_set('zlib.output_compression', 0);
+    while (ob_get_level()) ob_end_flush();
+    ob_implicit_flush(true);
+    header('Content-Type: text/event-stream');
+    header('Cache-Control: no-cache');
+    header('Connection: keep-alive');
+
+    $chunkSize = 120;
+    $pos = 0;
+    while ($pos < strlen($text)) {
+      $chunk = substr($text, $pos, $chunkSize);
+      echo "data: " . json_encode(['text' => $chunk]) . "\n\n";
+      if (ob_get_level()) { @ob_flush(); }
+      flush();
+      $pos += $chunkSize;
+      usleep(40000);
+    }
+    echo "data: [DONE]\n\n";
+    exit;
+  } else {
+    // Non-stream: try keys until one succeeds
+    foreach ($keys as $k) {
+      list($httpCode, $result, $curlErr) = call_google_once($k, $payload);
+
+      if ($curlErr) { $lastGeminiError = $curlErr; continue; }
+      if ($httpCode >= 200 && $httpCode < 300) {
+        $resp = json_decode($result, true);
+        $text = '';
+        if (!empty($resp['candidates']) && is_array($resp['candidates']) && !empty($resp['candidates'][0]['content'])) {
+          $text = $resp['candidates'][0]['content'];
+        } elseif (!empty($resp['output']) && is_string($resp['output'])) {
+          $text = $resp['output'];
+        } elseif (!empty($resp['candidates']) && is_array($resp['candidates']) && !empty($resp['candidates'][0]['output'])) {
+          $text = $resp['candidates'][0]['output'];
+        }
+        echo json_encode(['answer' => trim($text), 'note' => 'live (google)']);
+        exit;
+      } else {
+        $err = json_decode($result, true);
+        $msg = $err['error']['message'] ?? ($err['error'] ?? 'API error');
+        $lastGeminiError = $msg;
+        // For common client errors (4xx), treat as unusable key and try the next one
+        if (($httpCode >= 400 && $httpCode < 500) || strpos(strtolower($msg), 'quota') !== false || strpos(strtolower($msg), 'incorrect api key') !== false || strpos(strtolower($msg), 'insufficient') !== false) {
+          continue;
+        } else {
+          // Other errors may be server-side or unexpected; surface them
+          echo json_encode(['error' => $msg]);
+          exit;
+        }
+      }
+    }
+
+    // all keys failed
+    if ($liveOnly) {
+      http_response_code(503);
+      echo json_encode(['error' => 'No usable Gemini key available (quota or auth issue): ' . ($lastGeminiError ?: 'none')]);
+      exit;
+    }
+    // fall back to local rules if live not required
+    $fallback = get_local_reply($question);
+    $fallback['note'] = 'Google API error: ' . ($lastGeminiError ?: 'no usable key') . ' — using local fallback';
+    echo json_encode($fallback);
+    exit;
+  }
+} else {
+  // No API keys configured
+  if (isset($liveOnly) && $liveOnly) {
+    http_response_code(503);
+    echo json_encode(['error' => 'No Gemini API key configured on the server']);
+    exit;
+  }
+
+  // Local fallback responses when no API key is configured
+  $q = strtolower($question);
+
+  // Basic greetings
+  if (strpos($q, 'hello') !== false || strpos($q, 'hi') !== false) {
+    $reply = "Hello! I'm Termipest AI. Ask me about pest control, prevention tips, or our services in Kenya.";
+
+  // Company / services
+  } elseif (strpos($q, 'termipest') !== false || strpos($q, 'who are you') !== false || strpos($q, 'what do you do') !== false || strpos($q, 'what can you do') !== false || strpos($q, 'what services') !== false) {
+    $reply = "Termipest Limited provides professional pest control services in Kenya, including inspections, targeted treatments, prevention plans and customer support. Ask me about pests, prevention tips, or how to contact the team.";
+
+  // Rodent-specific guidance
+  } elseif (strpos($q, 'rodent') !== false || strpos($q, 'rat') !== false || strpos($q, 'mice') !== false) {
+    $reply = "For rodents: remove food sources, seal entry points, set traps or contact professional baiting services. If you want, provide details about where you see them and I'll give targeted tips.";
+
+  // Contact / booking info
+  } elseif (strpos($q, 'contact') !== false || strpos($q, 'phone') !== false || strpos($q, 'book') !== false || strpos($q, 'appointment') !== false) {
+    $reply = "To contact Termipest, visit our website or call our office. If you want, tell me which city in Kenya you're in and I can suggest next steps.";
+
+  // Generic fallback with guidance about enabling full AI
+  } else {
+    $reply = "I don't have an internet connection to fetch a full answer right now. To enable full AI responses, set the environment variable GEMINI_API_KEY on your server. Meanwhile, here's a short tip: keep areas clean, eliminate standing water, and seal cracks to reduce pest problems.";
+  }
+
+  echo json_encode(['answer' => $reply, 'note' => 'using local fallback']);
+  exit;
