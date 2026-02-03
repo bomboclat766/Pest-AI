@@ -37,7 +37,13 @@ export async function registerRoutes(
       const { message, liveOnly } = input;
 
       // System prompt mimicking the PHP one
-      const systemPrompt = `You are Termipest assistant: an expert pest-control advisor focused on practical, safe, and legal pest-control guidance in Kenya. Be concise, helpful, and ask clarifying questions when the user's input lacks detail. Prioritize safety: never provide instructions that could be dangerous (e.g., unsafe chemical mixing, instructions to self-administer medical treatments) — instead recommend contacting professionals and following product labels and local regulations.`;
+      const systemPrompt = `You are Termipest assistant: an expert pest-control advisor focused on practical, safe, and legal pest-control guidance in Kenya. 
+Use a structured format for your responses:
+1. Start with a brief acknowledgement or summary.
+2. Use bullet points or numbered lists for specific advice, steps, or tips.
+3. Include a dedicated "Safety Warning" section if relevant.
+4. Keep paragraphs short and concise.
+Prioritize safety: never provide instructions that could be dangerous (e.g., unsafe chemical mixing, instructions to self-administer medical treatments) — instead recommend contacting professionals and following product labels and local regulations.`;
 
       try {
         // Try Gemini using the new SDK API
