@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Bot, User, Info } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useState, useEffect } from "react";
 
 interface ChatMessageProps {
   role: "user" | "assistant" | "error";
@@ -13,6 +14,21 @@ interface ChatMessageProps {
 export function ChatMessage({ role, content, note, isFallback }: ChatMessageProps) {
   const isUser = role === "user";
   const isError = role === "error";
+  const [displayedContent, setDisplayedContent] = useState(isUser || isError ? content : "");
+
+  useEffect(() => {
+    if (!isUser && !isError && content) {
+      let index = 0;
+      const intervalId = setInterval(() => {
+        setDisplayedContent(content.slice(0, index + 1));
+        index++;
+        if (index >= content.length) {
+          clearInterval(intervalId);
+        }
+      }, 5); // Fast typing speed
+      return () => clearInterval(intervalId);
+    }
+  }, [content, isUser, isError]);
 
   return (
     <motion.div
@@ -44,9 +60,9 @@ export function ChatMessage({ role, content, note, isFallback }: ChatMessageProp
           )}
         >
           {isUser || isError ? (
-            content
+            displayedContent
           ) : (
-            <ReactMarkdown>{content}</ReactMarkdown>
+            <ReactMarkdown>{displayedContent}</ReactMarkdown>
           )}
         </div>
 
