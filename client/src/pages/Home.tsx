@@ -81,8 +81,8 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <Header />
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-6">
-        <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl shadow-primary/5 overflow-hidden border border-gray-100 flex flex-col h-[600px] max-h-[80vh]">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 w-full max-w-5xl mx-auto">
+        <div className="w-full bg-white rounded-3xl shadow-2xl shadow-primary/5 overflow-hidden border border-gray-100 flex flex-col h-[750px] max-h-[85vh]">
           
           {/* Chat Area */}
           <div 
