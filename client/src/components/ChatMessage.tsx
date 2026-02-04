@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Bot, User, Info } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 interface ChatMessageProps {
   role: "user" | "assistant" | "error";
@@ -39,10 +40,14 @@ export function ChatMessage({ role, content, note, isFallback }: ChatMessageProp
               ? "bg-primary text-primary-foreground rounded-tr-none"
               : isError
               ? "bg-destructive/10 text-destructive border border-destructive/20 rounded-tl-none"
-              : "bg-white text-gray-800 border border-gray-100 rounded-tl-none"
+              : "bg-white text-gray-800 border border-gray-100 rounded-tl-none assistant-response"
           )}
         >
-          {content}
+          {isUser || isError ? (
+            content
+          ) : (
+            <ReactMarkdown>{content}</ReactMarkdown>
+          )}
         </div>
 
         {(note || isFallback) && (
