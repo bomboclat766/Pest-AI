@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Bot, User, Info } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useState, useEffect } from "react";
 
 interface ChatMessageProps {
@@ -62,7 +63,7 @@ export function ChatMessage({ role, content, note, isFallback }: ChatMessageProp
           {isUser || isError ? (
             displayedContent
           ) : (
-            <ReactMarkdown>{displayedContent}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedContent}</ReactMarkdown>
           )}
         </div>
 
