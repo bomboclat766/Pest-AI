@@ -61,6 +61,12 @@
   background-color: rgba(0, 100, 0, 0.4);
 }
 
+@layer utilities {
+  .perspective-500 {
+    perspective: 500px;
+  }
+}
+
 /* AI Response Styling */
 .assistant-response {
   font-family: 'Inter', sans-serif;
