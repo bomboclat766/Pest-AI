@@ -101,21 +101,53 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-row gap-3 mb-6"
               >
-                <div className="w-8 h-8 rounded-full bg-white border border-primary/20 flex items-center justify-center shadow-sm relative overflow-visible">
+                <div className="w-8 h-8 rounded-full bg-white border border-primary/20 flex items-center justify-center shadow-sm relative overflow-visible perspective-500">
                   <Loader2 size={16} className="text-primary animate-spin" />
-                  {/* Floating Cube Animation */}
-                  <motion.div
-                    animate={{
-                      x: [-12, 12, 12, -12, -12],
-                      y: [-12, -12, 12, 12, -12],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "linear"
-                    }}
-                    className="absolute w-3 h-3 border border-primary/30 rounded-sm bg-primary/5 pointer-events-none"
-                  />
+                  {/* Cooler 3D Cube Animation */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <motion.div
+                      style={{
+                        width: 14,
+                        height: 14,
+                        position: "relative",
+                        transformStyle: "preserve-3d",
+                      }}
+                      animate={{
+                        rotateX: [0, 360],
+                        rotateY: [0, 360],
+                        rotateZ: [0, 360],
+                        x: [-15, 15, 15, -15, -15],
+                        y: [-15, -15, 15, 15, -15],
+                      }}
+                      transition={{
+                        duration: 5,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                    >
+                      {/* Cube Faces */}
+                      {[
+                        { rotateY: 0, translateZ: 7 },
+                        { rotateY: 180, translateZ: 7 },
+                        { rotateY: 90, translateZ: 7 },
+                        { rotateY: -90, translateZ: 7 },
+                        { rotateX: 90, translateZ: 7 },
+                        { rotateX: -90, translateZ: 7 },
+                      ].map((face, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            position: "absolute",
+                            width: "100%",
+                            height: "100%",
+                            background: "rgba(0, 100, 0, 0.05)",
+                            border: "1px solid rgba(0, 100, 0, 0.2)",
+                            transform: `rotateY(${face.rotateY || 0}deg) rotateX(${face.rotateX || 0}deg) translateZ(${face.translateZ}px)`,
+                          }}
+                        />
+                      ))}
+                    </motion.div>
+                  </div>
                 </div>
                 <div className="px-4 py-3 rounded-2xl rounded-tl-none bg-gray-50 border border-gray-100 shadow-sm flex items-center gap-2">
                   <span className="text-sm text-gray-500 font-medium">AI is thinking...</span>
