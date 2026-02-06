@@ -101,8 +101,21 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-row gap-3 mb-6"
               >
-                <div className="w-8 h-8 rounded-full bg-white border border-primary/20 flex items-center justify-center shadow-sm">
-                   <Loader2 size={16} className="text-primary animate-spin" />
+                <div className="w-8 h-8 rounded-full bg-white border border-primary/20 flex items-center justify-center shadow-sm relative overflow-visible">
+                  <Loader2 size={16} className="text-primary animate-spin" />
+                  {/* Floating Cube Animation */}
+                  <motion.div
+                    animate={{
+                      x: [-12, 12, 12, -12, -12],
+                      y: [-12, -12, 12, 12, -12],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                    className="absolute w-3 h-3 border border-primary/30 rounded-sm bg-primary/5 pointer-events-none"
+                  />
                 </div>
                 <div className="px-4 py-3 rounded-2xl rounded-tl-none bg-gray-50 border border-gray-100 shadow-sm flex items-center gap-2">
                   <span className="text-sm text-gray-500 font-medium">AI is thinking...</span>
