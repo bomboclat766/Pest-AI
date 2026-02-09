@@ -6,12 +6,12 @@ import { getLocalReply } from "./fallback";
 import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 
-// Initialize Gemini client (auto-injected env vars)
+// Initialize Gemini client (auto-injected env vars or standard API key)
 const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "dummy",
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "dummy",
   httpOptions: {
     apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || undefined,
   },
 });
 
