@@ -33,31 +33,35 @@ export function ChatMessage({ role, content, note, isFallback }: ChatMessageProp
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 20, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
       className={cn(
-        "flex w-full gap-3 mb-6",
+        "flex w-full gap-4 mb-8",
         isUser ? "flex-row-reverse" : "flex-row"
       )}
     >
       <div
         className={cn(
-          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
-          isUser ? "bg-primary text-primary-foreground" : isError ? "bg-destructive text-destructive-foreground" : "bg-white text-primary border border-primary/20"
+          "flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-105",
+          isUser 
+            ? "bg-gradient-to-tr from-primary to-accent text-white" 
+            : isError 
+              ? "bg-destructive text-destructive-foreground" 
+              : "bg-white text-primary border border-white/40 backdrop-blur-sm"
         )}
       >
-        {isUser ? <User size={16} /> : <Bot size={16} />}
+        {isUser ? <User size={20} /> : isError ? <Info size={20} /> : <Bot size={20} />}
       </div>
 
-      <div className={cn("flex flex-col max-w-[80%]", isUser && "items-end")}>
+      <div className={cn("flex flex-col max-w-[85%]", isUser && "items-end")}>
         <div
           className={cn(
-            "px-4 py-3 rounded-2xl shadow-sm text-sm leading-relaxed",
+            "px-6 py-4 rounded-[1.5rem] shadow-xl text-[1rem] leading-relaxed transition-all",
             isUser
-              ? "bg-primary text-primary-foreground rounded-tr-none"
+              ? "bg-gradient-to-tr from-primary to-accent text-white rounded-tr-none shadow-primary/20"
               : isError
               ? "bg-destructive/10 text-destructive border border-destructive/20 rounded-tl-none"
-              : "bg-white text-gray-800 border border-gray-100 rounded-tl-none assistant-response"
+              : "bg-white/90 backdrop-blur-sm text-gray-700 border border-white/60 rounded-tl-none assistant-response"
           )}
         >
           {isUser || isError ? (
