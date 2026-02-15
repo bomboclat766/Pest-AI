@@ -21,11 +21,10 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Check AI status
   app.get(api.chat.status.path, async (req, res) => {
-    const hasKey = !!process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-    // Simple check - we assume if env vars are present, it's "live" in this context
+    const hasKey = !!(process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
     res.json({
       gemini: hasKey,
-      live: hasKey // In Replit integration, if it's installed, it's live
+      live: hasKey
     });
   });
 
