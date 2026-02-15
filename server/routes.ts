@@ -86,6 +86,11 @@ export async function registerRoutes(
           console.log('[AI] REST generateContent ->', modelId);
 
           const body = {
+            // Keep the request compact and cost-controlled to avoid quota exhaustion
+            // These settings reduce token usage and limit candidate generation.
+            temperature: 0.2,
+            candidateCount: 1,
+            maxOutputTokens: 256,
             contents: [
               { role: 'user', parts: [{ text: systemPrompt + "\n\nUser question: " + message }] }
             ]
