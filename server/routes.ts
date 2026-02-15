@@ -74,7 +74,7 @@ export async function registerRoutes(
 
       try {
         // Select model (allow override via .env/GEMINI_MODEL). default to text-bison-001 which is widely available.
-        const modelEnv = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+        const modelEnv = process.env.GEMINI_MODEL || "gemini-1.5-flash";
         const modelName = modelEnv.startsWith("models/") ? modelEnv : `models/${modelEnv}`;
         console.log(`[AI] using model resource: ${modelName}`);
 
