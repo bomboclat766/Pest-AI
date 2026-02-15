@@ -116,7 +116,7 @@ export default function Home() {
                       />
                     ))}
                   </div>
-                  <span className="text-sm text-gray-400 font-medium">Gemini is generating...</span>
+                  <span className="text-sm text-gray-400 font-medium">Thinking...</span>
                 </div>
               </motion.div>
             )}
