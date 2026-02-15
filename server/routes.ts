@@ -146,12 +146,13 @@ export async function registerRoutes(
           }
 
           if (!finalResponseText) {
-            // If we failed due to quota/rate limits, fall back to local reply instead of surfacing a network error.
+            // If we failed due to quota/rate limits, enforce strict live-only semantics
             console.error('[AI] REST generateContent final error:', lastErr);
             if (liveOnly) {
-              // If the user insisted on live-only but quota persists, still provide helpful fallback to avoid broken UX.
-              const local = getLocalReply(message);
-              return res.status(200).json({ response: local.answer, isFallback: true, note: `Fell back due to live AI error: ${String(lastErr)}` });
+              return res.status(500).json({
+                message: 'AI service unavailable and Live-only mode is active.',
+                details: String(lastErr),
+              });
             }
 
             const local = getLocalReply(message);
