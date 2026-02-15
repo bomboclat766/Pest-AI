@@ -29,12 +29,22 @@ export function useSendMessage() {
 
       if (!res.ok) {
         // Try to parse structured error
+        let bodyText = undefined;
         try {
+          // Prefer structured JSON error when available
           const errorData = await res.json();
-          throw new Error(errorData.message || "Failed to send message");
-        } catch (e) {
-          throw new Error("Network error occurred");
+          bodyText = errorData.message || JSON.stringify(errorData);
+        } catch (_) {
+          // Fallback to plain text body
+          try {
+            bodyText = await res.text();
+          } catch (__) {
+            bodyText = undefined;
+          }
         }
+
+        const msg = bodyText || `Request failed (${res.status})`;
+        throw new Error(msg);
       }
 
       return api.chat.send.responses[200].parse(await res.json());
