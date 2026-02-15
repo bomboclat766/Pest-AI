@@ -1,6 +1,10 @@
-# Termipest Assistant - GitHub Workspace Setup
+# PestControl AI Assistant - GitHub Workspace Setup
 
-This project is ready to be used in GitHub Codespaces or published to external hosts.
+This project is a general-purpose pest control AI assistant ready to be used in GitHub Codespaces or published to external hosts.
+
+## Overview
+
+An intelligent chatbot application that provides advice on pest identification, prevention, and treatment. The system uses Google's Gemini AI.
 
 ## Environment Variables
 
