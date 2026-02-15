@@ -9,11 +9,11 @@ export function Header() {
         </div>
         
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">
-          Termipest Limited
+          PestControl AI
         </h1>
         
         <p className="text-primary-foreground/90 font-medium text-sm md:text-base max-w-md leading-relaxed">
-          Professional Pest Control Solutions in Kenya
+          Intelligent Pest Identification & Prevention Advisor
         </p>
       </div>
     </header>

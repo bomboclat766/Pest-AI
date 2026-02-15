@@ -21,7 +21,7 @@ export default function Home() {
     {
       id: "welcome",
       role: "assistant",
-      content: "Hello! Welcome to Termipest Limited. How can we help you with your pest control needs today?",
+      content: "Hello! I'm your AI Pest Control Assistant. How can I help you with your pest identification or prevention needs today?",
     }
   ]);
   const [inputValue, setInputValue] = useState("");
