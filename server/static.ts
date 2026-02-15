@@ -10,6 +10,20 @@ export function serveStatic(app: Express) {
     );
   }
 
+  // Ensure browsers pick up favicon changes immediately by disabling caching
+  app.use((req, res, next) => {
+    try {
+      if (req.path && req.path.startsWith('/favicon')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    } catch (e) {
+      // ignore header set errors
+    }
+    next();
+  });
+
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist
