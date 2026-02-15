@@ -91,17 +91,76 @@ export async function registerRoutes(
             ]
           };
 
-          const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-          if (!r.ok) {
-            const text = await r.text();
-            throw new Error(`REST generateContent failed (${r.status}): ${text}`);
-          }
-          const j = await r.json();
-          const response = j?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join('') || '';
+          // retry loop for transient errors (429/5xx)
+          const maxAttempts = 3;
+          let attempt = 0;
+          let lastErr: any = null;
+          let finalResponseText = '';
 
-          res.json({ response, isFallback: false });
+          while (attempt < maxAttempts) {
+            attempt += 1;
+            try {
+              const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+              if (r.ok) {
+                const j = await r.json();
+                finalResponseText = j?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join('') || '';
+                break;
+              }
+
+              // parse error body if available
+              let errText = '';
+              try {
+                errText = await r.text();
+              } catch (e) {
+                errText = `HTTP ${r.status}`;
+              }
+
+              // If rate limited, honor Retry-After header or server-provided retry info
+              if (r.status === 429) {
+                const ra = r.headers.get('Retry-After');
+                const waitMs = ra ? (parseFloat(ra) * 1000) : (Math.min(2 ** attempt * 1000, 10000));
+                console.warn(`[AI] 429 received, attempt ${attempt}/${maxAttempts}, retrying after ${waitMs}ms`);
+                await new Promise((res) => setTimeout(res, waitMs));
+                lastErr = new Error(`429: ${errText}`);
+                continue;
+              }
+
+              // For server errors (5xx) do a short backoff and retry
+              if (r.status >= 500 && r.status < 600) {
+                const waitMs = Math.min(2 ** attempt * 500, 5000);
+                console.warn(`[AI] ${r.status} received, attempt ${attempt}/${maxAttempts}, retrying after ${waitMs}ms`);
+                await new Promise((res) => setTimeout(res, waitMs));
+                lastErr = new Error(`${r.status}: ${errText}`);
+                continue;
+              }
+
+              // Non-retriable error
+              throw new Error(`REST generateContent failed (${r.status}): ${errText}`);
+            } catch (e: any) {
+              lastErr = e;
+              // if this was the last attempt, break to handle below
+              if (attempt >= maxAttempts) break;
+              const backoff = Math.min(2 ** attempt * 300, 3000);
+              await new Promise((res) => setTimeout(res, backoff));
+            }
+          }
+
+          if (!finalResponseText) {
+            // If we failed due to quota/rate limits, fall back to local reply instead of surfacing a network error.
+            console.error('[AI] REST generateContent final error:', lastErr);
+            if (liveOnly) {
+              // If the user insisted on live-only but quota persists, still provide helpful fallback to avoid broken UX.
+              const local = getLocalReply(message);
+              return res.status(200).json({ response: local.answer, isFallback: true, note: `Fell back due to live AI error: ${String(lastErr)}` });
+            }
+
+            const local = getLocalReply(message);
+            return res.json({ response: local.answer, isFallback: true, note: `Fell back due to live AI error: ${String(lastErr)}` });
+          }
+
+          res.json({ response: finalResponseText, isFallback: false });
         } catch (restErr: any) {
-          console.error('[AI] REST generateContent error:', restErr);
+          console.error('[AI] REST generateContent error (unexpected):', restErr);
 
           if (liveOnly) {
             return res.status(500).json({ message: 'AI service unavailable and Live-only mode is active.', details: String(restErr) });
