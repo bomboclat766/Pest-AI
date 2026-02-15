@@ -13,7 +13,7 @@ To use the AI features outside of Replit, you need to set up the following envir
 ## Publishing to GitHub Pages (Frontend Only)
 
 1.  Go to your GitHub repository **Settings > Secrets and variables > Actions**.
-2.  Add a new secret `GEMINI_API_KEY` with your API key.
+2.  Add a new secret `GOOGLE_API_KEY` with your API key.
 3.  The included GitHub Action in `.github/workflows/publish.yml` will handle the build process.
 
 ## Local Development
