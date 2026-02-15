@@ -10,7 +10,9 @@ import { z } from "zod";
 const ai = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "dummy",
   httpOptions: {
-    apiVersion: "",
+    // If a custom base URL is provided (e.g. Replit AI Integrations) keep apiVersion blank.
+    // Otherwise use the public Generative Language API version so the SDK builds the correct REST path.
+    apiVersion: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL ? "" : "v1",
     baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || undefined,
   },
 });
@@ -28,6 +30,16 @@ export async function registerRoutes(
     });
   });
 
+  // Accept client-side runtime/error reports (diagnostic)
+  app.post('/api/client-error', async (req, res) => {
+    try {
+      console.error('[client-error]', { ip: req.ip, body: req.body });
+    } catch (e) {
+      console.error('[client-error] failed to log', e);
+    }
+    res.json({ ok: true });
+  });
+
   // Chat endpoint
   app.post(api.chat.send.path, async (req, res) => {
     try {
@@ -37,36 +49,67 @@ export async function registerRoutes(
       // General AI System prompt
       const systemPrompt = `You are a professional Pest Control AI Assistant. Your goal is to provide accurate, evidence-based pest identification, prevention, and treatment advice.
 
-**I. CONVERSATION FLOW & GREETINGS**
-- **Initial Greeting:** If the user greets you, respond with a professional welcome as an AI Pest Control Assistant.
-- **Tone:** Maintain an authoritative yet helpful and safety-conscious tone.
+    **I. BRAND & PRODUCT GUIDELINES**
+    - **Brand Discussion:** You are EXPLICITLY PERMITTED to discuss specific commercial brands (e.g., Bayer, Syngenta, BASF) and products (e.g., Roundup, Advion, Temprid).
+    - **Technical Context:** Treat brand names as technical references for active ingredients. When a user mentions a brand, provide the technical data associated with it (active ingredient, concentration, formulation type, typical use-cases).
+    - **Comparison:** Provide objective comparisons between products if asked, focusing on active ingredient concentrations, modes of action, and recommended application methods.
+    - **No Endorsement:** Frame brand mentions as "Commonly used professional products include..." rather than direct endorsements or absolute recommendations.
 
-**II. GUIDELINES**
-- **Identification:** Help users identify pests based on descriptions of symptoms, droppings, or sightings.
-- **Prevention:** Provide step-by-step advice on excluding pests and maintaining a pest-free environment.
-- **Treatment:** Recommend general categories of treatments (e.g., gels, sprays, baits) and mention that users should follow local regulations and label instructions.
-- **Safety:** Always prioritize safety. Include warnings about Personal Protective Equipment (PPE) and keeping chemicals away from children and pets.
+    **II. CONVERSATION FLOW & GREETINGS**
+    - **Initial Greeting:** If the user greets you, respond with a professional welcome as an AI Pest Control Assistant.
+    - **Tone:** Authoritative, technical, and safety-conscious.
 
-**III. OUTPUT STRUCTURE**
-- Use Markdown for formatting (headers, lists, tables).
-- Always include a "Safety First" section for any treatment advice.
-- End with a summary of key actionable steps.`;
+    **III. GUIDELINES**
+    - **Identification:** Help identify pests based on symptoms, droppings, or sightings; ask clarifying questions when information is ambiguous.
+    - **Treatment:** Recommend specific categories of treatments and include relevant brand-name examples used by professionals when useful; always note active ingredients and typical concentrations.
+    - **Safety:** Always include explicit warnings about Personal Protective Equipment (PPE), safe storage, label instructions, and keeping chemicals away from children and pets.
+
+    **IV. OUTPUT STRUCTURE**
+    - Use Markdown for formatting (headers, lists, tables).
+    - Always include a "Safety First" section for any treatment advice.
+    - End with a summary of key actionable steps.
+
+    Follow these rules strictly: prioritize safety, be explicit about uncertainty, avoid prescribing exact dosages unless the user supplies local regulatory context and product label instructions, and always encourage consulting product labels or licensed professionals for regulated pesticide use.`;
 
       try {
-        // Try Gemini using the new SDK API
-        const result = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: [
-            { role: "user", parts: [{ text: systemPrompt + "\n\nUser question: " + message }] }
-          ],
-        });
-        
-        const response = result.text || "";
-        
-        res.json({
-          response,
-          isFallback: false,
-        });
+        // Select model (allow override via .env/GEMINI_MODEL). default to text-bison-001 which is widely available.
+        const modelEnv = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+        const modelName = modelEnv.startsWith("models/") ? modelEnv : `models/${modelEnv}`;
+        console.log(`[AI] using model resource: ${modelName}`);
+
+        // Direct REST call to Generative Language API (bypass SDK) — more reliable in this environment
+        try {
+          const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+          const modelId = modelName.replace(/^models\//, '');
+          const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`;
+          console.log('[AI] REST generateContent ->', modelId);
+
+          const body = {
+            contents: [
+              { role: 'user', parts: [{ text: systemPrompt + "\n\nUser question: " + message }] }
+            ]
+          };
+
+          const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          if (!r.ok) {
+            const text = await r.text();
+            throw new Error(`REST generateContent failed (${r.status}): ${text}`);
+          }
+          const j = await r.json();
+          const response = j?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join('') || '';
+
+          res.json({ response, isFallback: false });
+        } catch (restErr: any) {
+          console.error('[AI] REST generateContent error:', restErr);
+
+          if (liveOnly) {
+            return res.status(500).json({ message: 'AI service unavailable and Live-only mode is active.', details: String(restErr) });
+          }
+
+          // Final fallback to local generator
+          const local = getLocalReply(message);
+          res.json({ response: local.answer, isFallback: true, note: local.note });
+        }
 
       } catch (error: any) {
         console.error("Gemini API Error:", error);

@@ -10,6 +10,55 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Diagnostic helper: reports client-side runtime errors to the server -->
+    <script>
+      (function () {
+        function send(payload) {
+          try {
+            navigator.sendBeacon
+              ? navigator.sendBeacon('/api/client-error', JSON.stringify(payload))
+              : fetch('/api/client-error', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          } catch (e) {
+            /* ignore */
+          }
+        }
+
+        function makeBanner(msg) {
+          try {
+            const b = document.createElement('div');
+            b.textContent = msg;
+            b.style.position = 'fixed';
+            b.style.left = '12px';
+            b.style.right = '12px';
+            b.style.top = '12px';
+            b.style.zIndex = '99999';
+            b.style.padding = '10px 14px';
+            b.style.background = 'rgba(220,53,69,0.95)';
+            b.style.color = 'white';
+            b.style.borderRadius = '8px';
+            b.style.fontFamily = 'sans-serif';
+            b.style.boxShadow = '0 6px 24px rgba(0,0,0,0.2)';
+            document.body.appendChild(b);
+          } catch (e) {
+            /* ignore */
+          }
+        }
+
+        window.addEventListener('error', function (evt) {
+          const err = evt && evt.error ? { message: evt.error.message, stack: evt.error.stack } : { message: evt.message };
+          send({ type: 'error', payload: err, href: location.href });
+          makeBanner('Client runtime error — check server logs (see /api/client-error)');
+        });
+
+        window.addEventListener('unhandledrejection', function (evt) {
+          const reason = evt && evt.reason ? (evt.reason.message || String(evt.reason)) : 'unhandled rejection';
+          send({ type: 'unhandledrejection', payload: { reason }, href: location.href });
+          makeBanner('Unhandled promise rejection — check server logs (see /api/client-error)');
+        });
+      })();
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
