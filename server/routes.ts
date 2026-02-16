@@ -1,37 +1,29 @@
 import type { Express } from "express";
 import type { Server } from "http";
-import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { getLocalReply } from "./fallback";
 import { checkAndConsume, getStatus } from "./rateLimiter";
-import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 
-// Initialize Gemini client (auto-injected env vars or standard API key)
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "dummy",
-    httpOptions: {
-    // If a custom base URL is provided (e.g. Replit AI Integrations) keep apiVersion blank.
-    // Otherwise use the public Generative Language API version so the SDK builds the correct REST path.
-    apiVersion: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL ? "" : "v1",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || undefined,
-  },
-});
+// Configuration for OpenRouter
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const SITE_URL = process.env.SITE_URL || "https://pest-ai.onrender.com";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Check AI status
-  app.get(api.chat.status.path, async (req, res) => {
-    const hasKey = !!(process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
+  
+  // 1. Check AI status
+  app.get(api.chat.status.path, async (_req, res) => {
+    const hasKey = !!OPENROUTER_API_KEY && OPENROUTER_API_KEY !== "dummy";
     res.json({
       gemini: hasKey,
       live: hasKey
     });
   });
 
-  // Accept client-side runtime/error reports (diagnostic)
+  // 2. Client-side error reporting
   app.post('/api/client-error', async (req, res) => {
     try {
       console.error('[client-error]', { ip: req.ip, body: req.body });
@@ -41,194 +33,81 @@ export async function registerRoutes(
     res.json({ ok: true });
   });
 
-  // Chat endpoint
+  // 3. Chat endpoint
   app.post(api.chat.send.path, async (req, res) => {
     try {
       const input = api.chat.send.input.parse(req.body);
       const { message, liveOnly } = input;
 
-      // General AI System prompt
-      const systemPrompt = `You are the Professional Pest Control Intelligence Assistant (2026 Edition). You are a world-class expert in entomology, pesticide chemistry, and Integrated Pest Management (IPM).
+      // Rate Limiting Logic
+      const limiterKey = OPENROUTER_API_KEY || 'public';
+      const status = checkAndConsume(limiterKey);
+      if (!status.ok) {
+        const retry = status.retryAfterSeconds || 60;
+        res.setHeader('Retry-After', String(retry));
+        return res.status(429).json({ 
+          message: 'Rate limit exceeded', 
+          retryAfter: retry, 
+          status: getStatus(limiterKey) 
+        });
+      }
 
-    **I. ADAPTIVE CONVERSATION MODES**
-    1. **Greeting/Social:** If the user says "Hi," "Thanks," or "You're amazing," respond with a warm, professional, and supportive personality. Be a helpful peer, not a rigid bot.
-    2. **Explanation:** When asked for an explanation, break down complex biological or chemical processes (e.g., how a neonicotinoid affects a nervous system) into clear, understandable language.
-    3. **Summary:** If asked for a summary, provide a high-level "Executive Overview" of the key facts.
-    4. **Evaluation:** When asked to evaluate a product or service, provide an objective "Pros vs. Cons" analysis based on 2026 efficacy data.
+      // Professional Pest Control System Prompt
+      const systemPrompt = `You are the Professional Pest Control Intelligence Assistant (2026 Edition).
+      Mandatory: Use Markdown tables for comparisons.
+      Mandatory: Include a 'Safety Protocol' section (PPE, label law).
+      Knowledge: Isocycloseram (Plinazolin), Cyclobutrifluram, and Icafolin.`;
 
-    **II. 2026 INDUSTRY INTELLIGENCE**
-    - **New Chemicals:** You are knowledgeable about 2025-2026 EPA-approved ingredients like **Isocycloseram** (Plinazolin tech), **Cyclobutrifluram**, and the first new herbicide mode in 30 years, **Icafolin**.
-    - **Smart Tech:** You understand IoT-connected monitoring (Anticimex SMART, Bell Labs iQ) and AI-driven drone spraying.
-    - **Top Companies:** You can compare global leaders (Rentokil, Orkin, Terminix) and local experts (e.g., Agile Pest or GM Fumigators in Nairobi).
-
-    **III. DATA VISUALIZATION (TABLES)**
-    - **MANDATORY TABLES:** Use Markdown tables for comparing 2+ products, chemicals, or strategies. 
-    - **Headers:** Use clear headers like | Feature | Product A | Product B | Verdict |.
-
-    **IV. RESPONSE STRUCTURE**
-    - **Conciseness:** Keep technical answers "punchy." Use bullet points.
-    - **Safety First:** Every recommendation MUST have a clearly labeled "Safety Protocol" section (PPE, children/pets, label law).
-    - **Structure:** 1. Brief Answer/Greeting -> 2. Detailed Table/Analysis -> 3. Safety Protocol -> 4. Actionable Summary.
-
-    **V. SAFETY & LEGAL**
-    Prioritize human and pet safety. Remind users that the physical product label is the legal final word. Maintain an authoritative, safety-conscious, yet helpful tone.`;
-
+      // OpenRouter Request
       try {
-        // Select model (allow override via .env/GEMINI_MODEL). default to text-bison-001 which is widely available.
-        const modelEnv = process.env.GEMINI_MODEL || "gemini-1.5-flash";
-        const modelName = modelEnv.startsWith("models/") ? modelEnv : `models/${modelEnv}`;
-        console.log(`[AI] using model resource: ${modelName}`);
-
-        // Direct REST call to Generative Language API (bypass SDK) — more reliable in this environment
-        try {
-          const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-          const limiterKey = apiKey || 'public';
-          const status = checkAndConsume(limiterKey);
-          if (!status.ok) {
-            const retry = status.retryAfterSeconds || 60;
-            res.setHeader('Retry-After', String(retry));
-            return res.status(429).json({ message: 'Rate limit exceeded for free tier', retryAfter: retry, reason: status.reason, status: getStatus(limiterKey) });
-          }
-          const modelId = modelName.replace(/^models\//, '');
-          const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`;
-          console.log('[AI] REST generateContent ->', modelId);
-
-          // Token-aware prompt handling: estimate tokens from chars (approx 4 chars/token)
-          const maxInputTokens = 1024; // max tokens we allow for input
-          const maxOutputTokens = 256; // already set above for responses
-          const charsPerToken = 4;
-
-          const systemPromptFull = systemPrompt;
-          const systemPromptLive = `You are a professional Pest Control AI Assistant. Provide concise, evidence-based identification, prevention, and safety guidance. Always include a "Safety Protocol" section.`;
-
-          const estimatedTokens = Math.ceil((systemPromptFull.length + message.length) / charsPerToken);
-          let promptToSend = systemPromptFull;
-          let userMessageToSend = message;
-
-          if (estimatedTokens > (maxInputTokens - maxOutputTokens)) {
-            // Use the condensed system prompt and truncate the user's message to fit
-            promptToSend = systemPromptLive;
-            const allowedInputChars = (maxInputTokens - maxOutputTokens) * charsPerToken - systemPromptLive.length;
-            if (allowedInputChars < 0) {
-              userMessageToSend = message.slice(0, 200); // extreme fallback
-            } else if (message.length > allowedInputChars) {
-              userMessageToSend = message.slice(0, allowedInputChars - 3) + '...';
-            }
-          }
-
-          const body = {
-            // Keep the request compact and cost-controlled to avoid quota exhaustion
-            contents: [
-              { role: 'user', parts: [{ text: promptToSend + "\n\nUser question: " + userMessageToSend }] }
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': SITE_URL,
+            'X-Title': "Pest AI Assistant",
+          },
+          body: JSON.stringify({
+            model: process.env.AI_MODEL || "google/gemini-flash-1.5",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: message }
             ]
-          };
+          })
+        });
 
-          // retry loop for transient errors (429/5xx)
-          const maxAttempts = 3;
-          let attempt = 0;
-          let lastErr: any = null;
-          let finalResponseText = '';
+        const data = await response.json();
 
-          while (attempt < maxAttempts) {
-            attempt += 1;
-            try {
-              const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-              if (r.ok) {
-                const j = await r.json();
-                finalResponseText = j?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join('') || '';
-                break;
-              }
-
-              // parse error body if available
-              let errText = '';
-              try {
-                errText = await r.text();
-              } catch (e) {
-                errText = `HTTP ${r.status}`;
-              }
-
-              // If rate limited, honor Retry-After header or server-provided retry info
-              if (r.status === 429) {
-                const ra = r.headers.get('Retry-After');
-                const waitMs = ra ? (parseFloat(ra) * 1000) : (Math.min(2 ** attempt * 1000, 10000));
-                console.warn(`[AI] 429 received, attempt ${attempt}/${maxAttempts}, retrying after ${waitMs}ms`);
-                await new Promise((res) => setTimeout(res, waitMs));
-                lastErr = new Error(`429: ${errText}`);
-                continue;
-              }
-
-              // For server errors (5xx) do a short backoff and retry
-              if (r.status >= 500 && r.status < 600) {
-                const waitMs = Math.min(2 ** attempt * 500, 5000);
-                console.warn(`[AI] ${r.status} received, attempt ${attempt}/${maxAttempts}, retrying after ${waitMs}ms`);
-                await new Promise((res) => setTimeout(res, waitMs));
-                lastErr = new Error(`${r.status}: ${errText}`);
-                continue;
-              }
-
-              // Non-retriable error
-              throw new Error(`REST generateContent failed (${r.status}): ${errText}`);
-            } catch (e: any) {
-              lastErr = e;
-              // if this was the last attempt, break to handle below
-              if (attempt >= maxAttempts) break;
-              const backoff = Math.min(2 ** attempt * 300, 3000);
-              await new Promise((res) => setTimeout(res, backoff));
-            }
-          }
-
-          if (!finalResponseText) {
-            // If we failed due to quota/rate limits, enforce strict live-only semantics
-            console.error('[AI] REST generateContent final error:', lastErr);
-            if (liveOnly) {
-              return res.status(500).json({
-                message: 'AI service unavailable and Live-only mode is active.',
-                details: String(lastErr),
-              });
-            }
-
-            const local = getLocalReply(message);
-            return res.json({ response: local.answer, isFallback: true, note: `Fell back due to live AI error: ${String(lastErr)}` });
-          }
-
-          res.json({ response: finalResponseText, isFallback: false });
-        } catch (restErr: any) {
-          console.error('[AI] REST generateContent error (unexpected):', restErr);
-
-          if (liveOnly) {
-            return res.status(500).json({ message: 'AI service unavailable and Live-only mode is active.', details: String(restErr) });
-          }
-
-          // Final fallback to local generator
-          const local = getLocalReply(message);
-          res.json({ response: local.answer, isFallback: true, note: local.note });
+        if (response.ok && data.choices?.[0]?.message?.content) {
+          const aiText = data.choices[0].message.content;
+          return res.json({ response: aiText, isFallback: false });
+        } else {
+          throw new Error(data.error?.message || "OpenRouter failed to return content");
         }
 
-      } catch (error: any) {
-        console.error("Gemini API Error:", error);
+      } catch (aiErr: any) {
+        console.error('[OpenRouter Error]:', aiErr.message);
 
         if (liveOnly) {
-           return res.status(500).json({ 
-             message: "AI service unavailable and Live-only mode is active.",
-             details: error.message 
-           });
+          return res.status(503).json({
+            message: 'AI unavailable',
+            details: aiErr.message,
+          });
         }
 
-        // Fallback
+        // Fallback to local response if OpenRouter fails
         const local = getLocalReply(message);
-        res.json({
-          response: local.answer,
-          isFallback: true,
-          note: local.note
+        return res.json({ 
+          response: local.answer, 
+          isFallback: true, 
+          note: `Fell back due to OpenRouter error: ${aiErr.message}` 
         });
       }
 
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({
-          message: err.errors[0].message,
-          field: err.errors[0].path.join('.'),
-        });
+        return res.status(400).json({ message: err.errors[0].message });
       }
       res.status(500).json({ message: "Internal server error" });
     }
