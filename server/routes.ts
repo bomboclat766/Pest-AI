@@ -3,6 +3,7 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { getLocalReply } from "./fallback";
+import { checkAndConsume, getStatus } from "./rateLimiter";
 import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 
@@ -81,6 +82,13 @@ export async function registerRoutes(
         // Direct REST call to Generative Language API (bypass SDK) — more reliable in this environment
         try {
           const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+          const limiterKey = apiKey || 'public';
+          const status = checkAndConsume(limiterKey);
+          if (!status.ok) {
+            const retry = status.retryAfterSeconds || 60;
+            res.setHeader('Retry-After', String(retry));
+            return res.status(429).json({ message: 'Rate limit exceeded for free tier', retryAfter: retry, reason: status.reason, status: getStatus(limiterKey) });
+          }
           const modelId = modelName.replace(/^models\//, '');
           const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`;
           console.log('[AI] REST generateContent ->', modelId);
