@@ -93,14 +93,36 @@ export async function registerRoutes(
           const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`;
           console.log('[AI] REST generateContent ->', modelId);
 
+          // Token-aware prompt handling: estimate tokens from chars (approx 4 chars/token)
+          const maxInputTokens = 1024; // max tokens we allow for input
+          const maxOutputTokens = 256; // already set above for responses
+          const charsPerToken = 4;
+
+          const systemPromptFull = systemPrompt;
+          const systemPromptLive = `You are a professional Pest Control AI Assistant. Provide concise, evidence-based identification, prevention, and safety guidance. Always include a "Safety Protocol" section.`;
+
+          const estimatedTokens = Math.ceil((systemPromptFull.length + message.length) / charsPerToken);
+          let promptToSend = systemPromptFull;
+          let userMessageToSend = message;
+
+          if (estimatedTokens > (maxInputTokens - maxOutputTokens)) {
+            // Use the condensed system prompt and truncate the user's message to fit
+            promptToSend = systemPromptLive;
+            const allowedInputChars = (maxInputTokens - maxOutputTokens) * charsPerToken - systemPromptLive.length;
+            if (allowedInputChars < 0) {
+              userMessageToSend = message.slice(0, 200); // extreme fallback
+            } else if (message.length > allowedInputChars) {
+              userMessageToSend = message.slice(0, allowedInputChars - 3) + '...';
+            }
+          }
+
           const body = {
             // Keep the request compact and cost-controlled to avoid quota exhaustion
-            // These settings reduce token usage and limit candidate generation.
             temperature: 0.2,
             candidateCount: 1,
-            maxOutputTokens: 256,
+            maxOutputTokens,
             contents: [
-              { role: 'user', parts: [{ text: systemPrompt + "\n\nUser question: " + message }] }
+              { role: 'user', parts: [{ text: promptToSend + "\n\nUser question: " + userMessageToSend }] }
             ]
           };
 
