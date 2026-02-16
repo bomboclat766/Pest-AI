@@ -28,7 +28,7 @@ export async function registerRoutes(
       TONE: Warm, empathetic, and professional. Acknowledge the user's stress briefly.
 
       STRICT LENGTH RULES:
-      1. UNDER 100 WORDS: All standard responses must be under 100 words.
+      1. UNDER 200 WORDS: All standard responses must be under 200 words.
       2. ANALYSIS EXCEPTION: If the user specifically asks for an "analysis" or "detailed evaluation," you may exceed 100 words to provide a deep dive.
       3. FORMATTING: Use bullet points for speed. Use Markdown tables ONLY for comparisons.
       
