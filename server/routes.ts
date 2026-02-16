@@ -10,7 +10,7 @@ import { z } from "zod";
 // Initialize Gemini client (auto-injected env vars or standard API key)
 const ai = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "dummy",
-  httpOptions: {
+    httpOptions: {
     // If a custom base URL is provided (e.g. Replit AI Integrations) keep apiVersion blank.
     // Otherwise use the public Generative Language API version so the SDK builds the correct REST path.
     apiVersion: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL ? "" : "v1",
@@ -118,9 +118,6 @@ export async function registerRoutes(
 
           const body = {
             // Keep the request compact and cost-controlled to avoid quota exhaustion
-            temperature: 0.2,
-            candidateCount: 1,
-            maxOutputTokens,
             contents: [
               { role: 'user', parts: [{ text: promptToSend + "\n\nUser question: " + userMessageToSend }] }
             ]
