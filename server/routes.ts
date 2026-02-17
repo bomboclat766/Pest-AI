@@ -27,7 +27,7 @@ export async function registerRoutes(
       
       ### MANDATORY FORMATTING RULE ###
       - COMPARISONS = MARKDOWN TABLES. If comparing 2+ brands (e.g. Bolt vs Doom) or 2+ companies, you MUST use a Markdown table. Do not use paragraphs for comparisons.
-      - Standard answers: Under 300 words.
+      - Standard answers: Under 100 words.
       - Analysis: Under 500 words.
 
       ### EXPERTISE ###
