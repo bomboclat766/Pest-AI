@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { ChatMessage } from "@/components/ChatMessage";
 import { useSendMessage } from "@/hooks/use-chat";
-import { Send, Loader2, Sparkles, ShieldCheck, Zap, Activity } from "lucide-react";
+import { Send, Loader2, Sparkles, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,6 +13,7 @@ export default function Home() {
     role: "assistant",
     content: "Hello! I'm your AI Pest Control Assistant. How can I help you today?",
   }]);
+  
   const [inputValue, setInputValue] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const sendMessage = useSendMessage();
@@ -44,7 +45,7 @@ export default function Home() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-[#1A3D35]">PestControl<span className="text-[#4AB295]">AI</span></h1>
-            <p className="text-xs text-gray-500">Smart Identification & Advice</p>
+            <p className="text-xs text-gray-500 font-medium">Smart Identification & Advice</p>
           </div>
         </div>
       </header>
@@ -59,10 +60,12 @@ export default function Home() {
                 <p className="text-[10px] uppercase text-gray-400 font-bold">Safety Level</p>
                 <p className="text-[#4AB295] font-bold">99.9% Secure</p>
               </div>
+              
               <div className="p-3 bg-[#F3F8F6] rounded-2xl">
                 <p className="text-[10px] uppercase text-gray-400 font-bold">AI Latency</p>
                 <p className="text-[#4AB295] font-bold">1.2s Response</p>
               </div>
+
               <div className="p-3 bg-[#F3F8F6] rounded-2xl">
                 <p className="text-[10px] uppercase text-gray-400 font-bold">Expert Logic</p>
                 <p className="text-[#4AB295] font-bold">Activated</p>
@@ -74,21 +77,33 @@ export default function Home() {
         {/* Right: Chat Container */}
         <div className="flex-1 bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-[#E8F0ED] flex flex-col relative overflow-hidden">
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-10 space-y-8">
-            <AnimatePresence>{messages.map(msg => <ChatMessage key={msg.id} {...msg} />)}</AnimatePresence>
+            <AnimatePresence initial={false}>
+              {messages.map(msg => <ChatMessage key={msg.id} {...msg} />)}
+            </AnimatePresence>
           </div>
 
           <div className="px-10 pb-10 pt-2">
             <form onSubmit={handleSend} className="relative flex items-center">
-              <Input value={inputValue} onChange={e => setInputValue(e.target.value)} placeholder="Ask anything..." className="w-full bg-[#F3F8F6] border-none rounded-full py-7 px-8 text-lg" />
-              <Button type="submit" className="absolute right-2 h-12 w-12 rounded-full bg-[#4AB295]"><Send size={20} /></Button>
+              <Input 
+                value={inputValue} 
+                onChange={e => setInputValue(e.target.value)} 
+                placeholder="Ask anything..." 
+                className="w-full bg-[#F3F8F6] border-none rounded-full py-7 px-8 text-lg focus-visible:ring-1 focus-visible:ring-[#4AB295]/20" 
+              />
+              <Button 
+                type="submit" 
+                className="absolute right-2 h-12 w-12 rounded-full bg-[#4AB295] hover:bg-[#3d967d] text-white shadow-lg"
+                disabled={!inputValue.trim() || sendMessage.isPending}
+              >
+                {sendMessage.isPending ? <Loader2 className="animate-spin" /> : <Send size={20} />}
+              </Button>
             </form>
           </div>
         </div>
       </main>
 
-      {/* Live Response Sticker */}
       <footer className="p-6 flex justify-center">
-        <div className="bg-[#E8F0ED] px-4 py-2 rounded-full flex items-center gap-2 border border-[#4AB295]/20">
+        <div className="bg-[#E8F0ED] px-5 py-2 rounded-full flex items-center gap-2 border border-[#4AB295]/20 shadow-sm">
           <div className="w-2 h-2 bg-[#4AB295] rounded-full animate-ping" />
           <span className="text-[11px] font-bold text-[#1A3D35] uppercase tracking-widest">AI Live Responses Activated</span>
         </div>
