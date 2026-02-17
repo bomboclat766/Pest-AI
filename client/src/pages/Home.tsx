@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/Header";
-// Removed FooterControls import
 import { ChatMessage } from "@/components/ChatMessage";
 import { useSendMessage } from "@/hooks/use-chat";
 import { Send, Loader2, Sparkles } from "lucide-react";
@@ -12,8 +11,6 @@ interface Message {
   id: string;
   role: "user" | "assistant" | "error";
   content: string;
-  note?: string;
-  isFallback?: boolean;
 }
 
 export default function Home() {
@@ -26,8 +23,6 @@ export default function Home() {
   ]);
   const [inputValue, setInputValue] = useState("");
   
-  // These are kept as local variables so the API call doesn't break, 
-  // but they are no longer controlled by a UI button.
   const liveOnly = true; 
   const model = "gemini-1.5-flash"; 
   
@@ -44,49 +39,39 @@ export default function Home() {
     e?.preventDefault();
     if (!inputValue.trim() || sendMessage.isPending) return;
 
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: inputValue,
-    };
-
+    const userMsg: Message = { id: Date.now().toString(), role: "user", content: inputValue };
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
 
     try {
-      const response = await sendMessage.mutateAsync({
-        message: userMsg.content,
-        liveOnly,
-        model,
-      });
-
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response.response,
-        note: response.note,
-        isFallback: response.isFallback,
-      };
-
+      const response = await sendMessage.mutateAsync({ message: userMsg.content, liveOnly, model });
+      const aiMsg: Message = { id: (Date.now() + 1).toString(), role: "assistant", content: response.response };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (error) {
-      const errorMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "error",
-        content: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
-      };
-      setMessages((prev) => [...prev, errorMsg]);
+      setMessages((prev) => [...prev, { id: "err", role: "error", content: "Error connecting to server." }]);
     }
   };
 
   return (
-    <div className="min-h-screen bg-transparent flex flex-col font-sans">
-      <Header />
+    <div className="min-h-screen bg-[#F8FBF9] flex flex-col font-sans selection:bg-emerald-100">
+      {/* Modern Top Header */}
+      <header className="p-6 flex justify-between items-center max-w-7xl mx-auto w-full">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#4AB295] rounded-xl flex items-center justify-center shadow-sm">
+            <Sparkles className="text-white" size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-[#1A3D35] leading-none">PestControl<span className="text-[#4AB295]">AI</span></h1>
+            <p className="text-xs text-gray-500 font-medium mt-1">Smart Identification & Advice</p>
+          </div>
+        </div>
+      </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 w-full max-w-4xl mx-auto">
-        <div className="w-full bg-white/70 backdrop-blur-xl rounded-[2rem] shadow-2xl shadow-primary/10 overflow-hidden border border-white/40 flex flex-col h-[800px] max-h-[85vh]">
+      <main className="flex-1 flex flex-col items-center p-4 md:p-8 w-full max-w-5xl mx-auto">
+        {/* Main Chat Container */}
+        <div className="w-full bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-[#E8F0ED] flex flex-col h-[750px] relative overflow-hidden">
           
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 scrollbar-thin">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-10 space-y-8 scroll-smooth">
             <AnimatePresence initial={false}>
               {messages.map((msg) => (
                 <ChatMessage key={msg.id} {...msg} />
@@ -94,62 +79,36 @@ export default function Home() {
             </AnimatePresence>
 
             {sendMessage.isPending && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-row gap-4 mb-8"
-              >
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                  <Sparkles size={18} className="text-white relative z-10" />
-                </div>
-                <div className="px-6 py-4 rounded-3xl rounded-tl-none bg-white/80 border border-white/20 shadow-sm flex items-center gap-3">
-                  <div className="flex gap-1">
-                    {[0, 1, 2].map((i) => (
-                      <motion.div
-                        key={i}
-                        className="w-1.5 h-1.5 rounded-full bg-primary/40"
-                        animate={{ scale: [1, 1.5, 1], opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-400 font-medium">Thinking...</span>
-                </div>
-              </motion.div>
+              <div className="flex gap-4 animate-pulse">
+                <div className="w-10 h-10 rounded-full bg-[#E8F0ED]" />
+                <div className="h-12 w-24 bg-[#F0F7F4] rounded-2xl rounded-tl-none" />
+              </div>
             )}
           </div>
 
-          <div className="p-6 bg-white/40 border-t border-white/20 backdrop-blur-sm">
+          {/* Minimalist Input Field */}
+          <div className="px-10 pb-10 pt-2">
             <form 
               onSubmit={handleSend}
-              className="flex items-center gap-4 bg-white/80 p-2 pr-2.5 rounded-[1.5rem] border border-white/40 focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary/30 transition-all duration-300 shadow-xl shadow-primary/5"
+              className="relative flex items-center group"
             >
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Ask anything..."
-                className="flex-1 border-none bg-transparent shadow-none focus-visible:ring-0 px-5 text-lg placeholder:text-gray-300 h-12"
-                disabled={sendMessage.isPending}
+                className="w-full bg-[#F3F8F6] border-2 border-transparent focus:border-[#4AB295]/20 focus:bg-white rounded-full py-7 px-8 text-lg transition-all shadow-inner placeholder:text-gray-300"
               />
               <Button
                 type="submit"
-                size="icon"
+                className="absolute right-2 h-12 w-12 rounded-full bg-[#4AB295] hover:bg-[#3d967d] shadow-lg transition-transform active:scale-90"
                 disabled={!inputValue.trim() || sendMessage.isPending}
-                className="rounded-2xl h-12 w-12 shrink-0 bg-gradient-to-tr from-primary to-accent hover:opacity-90 text-white shadow-lg hover:shadow-primary/20 transition-all duration-300"
               >
-                {sendMessage.isPending ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                ) : (
-                  <Send className="h-6 w-6" />
-                )}
+                {sendMessage.isPending ? <Loader2 className="animate-spin" /> : <Send size={20} />}
               </Button>
             </form>
           </div>
         </div>
       </main>
-
-      {/* FooterControls has been removed from here */}
     </div>
   );
 }
