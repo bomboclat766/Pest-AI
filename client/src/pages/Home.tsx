@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/Header";
-import { FooterControls } from "@/components/FooterControls";
+// Removed FooterControls import
 import { ChatMessage } from "@/components/ChatMessage";
 import { useSendMessage } from "@/hooks/use-chat";
 import { Send, Loader2, Sparkles } from "lucide-react";
@@ -25,13 +25,15 @@ export default function Home() {
     }
   ]);
   const [inputValue, setInputValue] = useState("");
-  const [liveOnly, setLiveOnly] = useState(true);
-  const [model, setModel] = useState("gemini-1.5-flash");
+  
+  // These are kept as local variables so the API call doesn't break, 
+  // but they are no longer controlled by a UI button.
+  const liveOnly = true; 
+  const model = "gemini-1.5-flash"; 
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const sendMessage = useSendMessage();
 
-  // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -84,11 +86,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 w-full max-w-4xl mx-auto">
         <div className="w-full bg-white/70 backdrop-blur-xl rounded-[2rem] shadow-2xl shadow-primary/10 overflow-hidden border border-white/40 flex flex-col h-[800px] max-h-[85vh]">
           
-          {/* Chat Area */}
-          <div 
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto p-8 scrollbar-thin"
-          >
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 scrollbar-thin">
             <AnimatePresence initial={false}>
               {messages.map((msg) => (
                 <ChatMessage key={msg.id} {...msg} />
@@ -122,7 +120,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* Input Area */}
           <div className="p-6 bg-white/40 border-t border-white/20 backdrop-blur-sm">
             <form 
               onSubmit={handleSend}
@@ -152,12 +149,7 @@ export default function Home() {
         </div>
       </main>
 
-      <FooterControls 
-        liveOnly={liveOnly} 
-        setLiveOnly={setLiveOnly}
-        model={model}
-        setModel={setModel}
-      />
+      {/* FooterControls has been removed from here */}
     </div>
   );
 }
