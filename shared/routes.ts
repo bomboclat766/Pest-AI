@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+// Vision Schema for Multi-modal support
+const MessagePartSchema = z.union([
+  z.object({ type: z.literal("text"), text: z.string() }),
+  z.object({ 
+    type: z.literal("image_url"), 
+    image_url: z.object({ url: z.string() }) 
+  })
+]);
+
 export const errorSchemas = {
   validation: z.object({
     message: z.string(),
@@ -16,9 +25,10 @@ export const api = {
       method: 'POST' as const,
       path: '/api/chat',
       input: z.object({
-        message: z.string(),
+        // CHANGE: message now accepts string OR the Vision Array
+        message: z.union([z.string(), z.array(MessagePartSchema)]),
         liveOnly: z.boolean().default(true),
-        model: z.string().optional(), // kept for compatibility/logging
+        model: z.string().optional(),
       }),
       responses: {
         200: z.object({
