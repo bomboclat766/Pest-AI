@@ -44,23 +44,32 @@ export default function Home() {
     e?.preventDefault();
     if ((!inputValue.trim() && !selectedImage) || sendMessage.isPending) return;
 
+    // Create the message for your UI
     const userMsg = { 
       id: Date.now().toString(), 
       role: "user", 
       content: inputValue,
-      image: selectedImage // Including image in the message object
+      image: selectedImage 
     };
     
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
     setSelectedImage(null);
 
+    // FORMAT FOR AI VISION: 
+    // If there's an image, we send an array with text and the image URL.
+    const aiContent = selectedImage 
+      ? [
+          { type: "text", text: userMsg.content || "What is in this image?" },
+          { type: "image_url", image_url: { url: selectedImage } }
+        ]
+      : userMsg.content;
+
     try {
       const response = await sendMessage.mutateAsync({
-        message: userMsg.content,
-        image: userMsg.image, // Pass image to your hook
+        message: aiContent, // Now passes the vision-ready format
         liveOnly: true,
-        model: "gemini-1.5-flash",
+        model: "google/gemini-flash-1.5", // Ensure your hook passes this to OpenRouter
       });
       setMessages((prev) => [
         ...prev,
@@ -163,7 +172,6 @@ export default function Home() {
           </div>
 
           <div className="px-10 pb-10 pt-2 relative">
-            {/* Image Preview Thumbnail */}
             <AnimatePresence>
               {selectedImage && (
                 <motion.div 
