@@ -9,7 +9,7 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
-  // 1. Status Check (Simplest version)
+  // 1. Status Check
   app.get(api.chat.status.path, async (_req, res) => {
     res.json({
       openRouter: !!process.env.OPENROUTER_API_KEY,
@@ -17,13 +17,14 @@ export async function registerRoutes(
     });
   });
 
-  // 2. Main Chat Route (No Rate Limiter)
+  // 2. Main Chat Route
   app.post(api.chat.send.path, async (req, res) => {
     try {
+      // Validate input using the updated schema (which now allows arrays)
       const input = api.chat.send.input.parse(req.body);
       const { message, liveOnly } = input;
 
-      const systemPrompt =`You are the Professional Pest Control Intelligence Assistant (2026 Edition).
+      const systemPrompt = `You are the Professional Pest Control Intelligence Assistant (2026 Edition).
 
 ### IDENTITY & ORIGIN ###
 - If the user asks who made you, who your developer is, or who your creator is, you MUST reply: "I am a Professional Pest Control Intelligence Assistant developed by Osteen, a private developer on GitHub."
@@ -41,9 +42,7 @@ export async function registerRoutes(
 - Provide [Buy Now] links for products via Jumia or Amazon where relevant.
 
 ### TONE ###
-- Warm, empathetic "helpful peer" tone. Professional yet approachable
-   `;
-;
+- Warm, empathetic "helpful peer" tone. Professional yet approachable.`;
 
       // Direct OpenRouter Call
       try {
@@ -59,7 +58,11 @@ export async function registerRoutes(
             model: "google/gemini-2.0-flash-001", 
             messages: [
               { role: "system", content: systemPrompt },
-              { role: "user", content: message }
+              { 
+                role: "user", 
+                // CRITICAL: We pass the message (string OR array) directly
+                content: message 
+              }
             ]
           })
         });
@@ -67,8 +70,12 @@ export async function registerRoutes(
         const data = await response.json();
 
         if (response.ok && data.choices?.[0]?.message?.content) {
-          return res.json({ response: data.choices[0].message.content, isFallback: false });
+          return res.json({ 
+            response: data.choices[0].message.content, 
+            isFallback: false 
+          });
         } else {
+          console.error("OpenRouter Response Error:", data);
           throw new Error(data.error?.message || "OpenRouter error");
         }
 
@@ -76,16 +83,20 @@ export async function registerRoutes(
         console.error("[OpenRouter Error]:", aiErr.message);
         if (liveOnly) return res.status(503).json({ message: "AI Unavailable" });
 
-        const local = getLocalReply(message);
+        // Fallback logic (only handles text, images ignored in fallback)
+        const textForFallback = typeof message === 'string' 
+          ? message 
+          : (Array.isArray(message) ? message.find(m => m.type === 'text')?.text || "" : "");
+        
+        const local = getLocalReply(textForFallback);
         return res.json({ response: local.answer, isFallback: true });
       }
 
     } catch (err) {
+      console.error("[Server Error]:", err);
       res.status(500).json({ message: "Internal Error" });
     }
   });
 
   return httpServer;
 }
- 
-         
