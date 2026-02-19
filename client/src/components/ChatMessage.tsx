@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 interface ChatMessageProps {
   role: "user" | "assistant" | "error";
   content: string;
-  image?: string | null; // Added image prop
+  image?: string | null;
   note?: string;
   isFallback?: boolean;
 }
@@ -29,6 +29,8 @@ export function ChatMessage({ role, content, image, note, isFallback }: ChatMess
         }
       }, 5);
       return () => clearInterval(intervalId);
+    } else {
+      setDisplayedContent(content);
     }
   }, [content, isUser, isError]);
 
@@ -45,10 +47,10 @@ export function ChatMessage({ role, content, image, note, isFallback }: ChatMess
         className={cn(
           "flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-105",
           isUser 
-            ? "bg-gradient-to-tr from-primary to-accent text-white" 
+            ? "bg-gradient-to-tr from-[#4AB295] to-[#3d967d] text-white" 
             : isError 
-              ? "bg-destructive text-destructive-foreground" 
-              : "bg-white text-primary border border-white/40 backdrop-blur-sm"
+              ? "bg-red-500 text-white" 
+              : "bg-white text-[#4AB295] border border-white/40 backdrop-blur-sm"
         )}
       >
         {isUser ? <User size={20} /> : isError ? <Info size={20} /> : <Bot size={20} />}
@@ -59,15 +61,46 @@ export function ChatMessage({ role, content, image, note, isFallback }: ChatMess
           className={cn(
             "px-6 py-4 rounded-[1.5rem] shadow-xl text-[1rem] leading-relaxed transition-all",
             isUser
-              ? "bg-gradient-to-tr from-primary to-accent text-white rounded-tr-none shadow-primary/20"
+              ? "bg-gradient-to-tr from-[#4AB295] to-[#3d967d] text-white rounded-tr-none"
               : isError
-              ? "bg-destructive/10 text-destructive border border-destructive/20 rounded-tl-none"
-              : "bg-white/90 backdrop-blur-sm text-gray-700 border border-white/60 rounded-tl-none assistant-response"
+              ? "bg-red-50 text-red-600 border border-red-100 rounded-tl-none"
+              : "bg-white/90 backdrop-blur-sm text-gray-700 border border-[#E8F0ED] rounded-tl-none assistant-response"
           )}
         >
-          {/* RENDER IMAGE IF PRESENT */}
+          {/* IMAGE RENDERING - Strictly check for image presence */}
           {isUser && image && (
             <div className="mb-3 overflow-hidden rounded-xl border-2 border-white/20 shadow-md">
               <img 
                 src={image} 
-                alt="Uploaded pest"
+                alt="Uploaded pest content" 
+                className="max-h-72 w-full object-cover rounded-lg"
+                loading="lazy"
+              />
+            </div>
+          )}
+
+          {isUser || isError ? (
+            <span className="whitespace-pre-wrap">{displayedContent}</span>
+          ) : (
+            <div className="prose prose-sm max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedContent}</ReactMarkdown>
+            </div>
+          )}
+        </div>
+
+        {(note || isFallback) && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-400 px-1"
+          >
+            <Info size={12} className="text-[#4AB295]/60" />
+            <span>
+              {note || (isFallback && "Using automated fallback response")}
+            </span>
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
