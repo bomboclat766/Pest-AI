@@ -8,11 +8,12 @@ import { useState, useEffect } from "react";
 interface ChatMessageProps {
   role: "user" | "assistant" | "error";
   content: string;
+  image?: string | null; // Added image prop
   note?: string;
   isFallback?: boolean;
 }
 
-export function ChatMessage({ role, content, note, isFallback }: ChatMessageProps) {
+export function ChatMessage({ role, content, image, note, isFallback }: ChatMessageProps) {
   const isUser = role === "user";
   const isError = role === "error";
   const [displayedContent, setDisplayedContent] = useState(isUser || isError ? content : "");
@@ -26,7 +27,7 @@ export function ChatMessage({ role, content, note, isFallback }: ChatMessageProp
         if (index >= content.length) {
           clearInterval(intervalId);
         }
-      }, 5); // Fast typing speed
+      }, 5);
       return () => clearInterval(intervalId);
     }
   }, [content, isUser, isError]);
@@ -64,26 +65,9 @@ export function ChatMessage({ role, content, note, isFallback }: ChatMessageProp
               : "bg-white/90 backdrop-blur-sm text-gray-700 border border-white/60 rounded-tl-none assistant-response"
           )}
         >
-          {isUser || isError ? (
-            displayedContent
-          ) : (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedContent}</ReactMarkdown>
-          )}
-        </div>
-
-        {(note || isFallback) && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground px-1"
-          >
-            <Info size={12} className="text-primary/60" />
-            <span>
-              {note || (isFallback && "Using automated fallback response")}
-            </span>
-          </motion.div>
-        )}
-      </div>
-    </motion.div>
-  );
-}
+          {/* RENDER IMAGE IF PRESENT */}
+          {isUser && image && (
+            <div className="mb-3 overflow-hidden rounded-xl border-2 border-white/20 shadow-md">
+              <img 
+                src={image} 
+                alt="Uploaded pest"
