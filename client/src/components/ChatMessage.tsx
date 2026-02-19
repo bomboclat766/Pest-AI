@@ -47,7 +47,7 @@ export function ChatMessage({ role, content, image, note, isFallback }: ChatMess
         className={cn(
           "flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-105",
           isUser 
-            ? "bg-gradient-to-tr from-[#4AB295] to-[#3d967d] text-white" 
+            ? "bg-[#4AB295] text-white" 
             : isError 
               ? "bg-red-500 text-white" 
               : "bg-white text-[#4AB295] border border-white/40 backdrop-blur-sm"
@@ -61,20 +61,19 @@ export function ChatMessage({ role, content, image, note, isFallback }: ChatMess
           className={cn(
             "px-6 py-4 rounded-[1.5rem] shadow-xl text-[1rem] leading-relaxed transition-all",
             isUser
-              ? "bg-gradient-to-tr from-[#4AB295] to-[#3d967d] text-white rounded-tr-none"
+              ? "bg-[#4AB295] text-white rounded-tr-none shadow-md"
               : isError
               ? "bg-red-50 text-red-600 border border-red-100 rounded-tl-none"
               : "bg-white/90 backdrop-blur-sm text-gray-700 border border-[#E8F0ED] rounded-tl-none assistant-response"
           )}
         >
-          {/* IMAGE RENDERING - Strictly check for image presence */}
+          {/* Render image if present - Fixed tag closure */}
           {isUser && image && (
             <div className="mb-3 overflow-hidden rounded-xl border-2 border-white/20 shadow-md">
               <img 
                 src={image} 
-                alt="Uploaded pest content" 
+                alt="Uploaded pest" 
                 className="max-h-72 w-full object-cover rounded-lg"
-                loading="lazy"
               />
             </div>
           )}
@@ -82,7 +81,7 @@ export function ChatMessage({ role, content, image, note, isFallback }: ChatMess
           {isUser || isError ? (
             <span className="whitespace-pre-wrap">{displayedContent}</span>
           ) : (
-            <div className="prose prose-sm max-w-none">
+            <div className="prose prose-sm max-w-none prose-p:leading-relaxed">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedContent}</ReactMarkdown>
             </div>
           )}
