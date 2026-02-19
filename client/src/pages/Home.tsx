@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { useSendMessage } from "@/hooks/use-chat";
-import { Send, Sparkles, Activity, ShieldCheck, Zap } from "lucide-react";
+import { Send, Sparkles, Activity, ShieldCheck, Zap, Plus, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,7 +15,9 @@ export default function Home() {
     },
   ]);
   const [inputValue, setInputValue] = useState("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const sendMessage = useSendMessage();
 
   useEffect(() => {
@@ -27,17 +29,36 @@ export default function Home() {
     }
   }, [messages, sendMessage.isPending]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!inputValue.trim() || sendMessage.isPending) return;
+    if ((!inputValue.trim() && !selectedImage) || sendMessage.isPending) return;
 
-    const userMsg = { id: Date.now().toString(), role: "user", content: inputValue };
+    const userMsg = { 
+      id: Date.now().toString(), 
+      role: "user", 
+      content: inputValue,
+      image: selectedImage // Including image in the message object
+    };
+    
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
+    setSelectedImage(null);
 
     try {
       const response = await sendMessage.mutateAsync({
         message: userMsg.content,
+        image: userMsg.image, // Pass image to your hook
         liveOnly: true,
         model: "gemini-1.5-flash",
       });
@@ -71,7 +92,6 @@ export default function Home() {
 
       <main className="flex-1 flex flex-row gap-6 p-4 md:p-8 w-full max-w-7xl mx-auto h-[800px]">
         <aside className="w-64 hidden lg:flex flex-col gap-4">
-          {/* Necessities Dashboard */}
           <div className="bg-white p-6 rounded-[2rem] border border-[#E8F0ED] shadow-sm">
             <h3 className="text-[#1A3D35] font-bold mb-4 flex items-center gap-2">
               <Activity size={16} /> Necessities
@@ -90,7 +110,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* AI Capabilities Dashboard */}
           <div className="bg-white p-6 rounded-[2rem] border border-[#E8F0ED] shadow-sm">
             <h3 className="text-[#1A3D35] font-bold mb-4 flex items-center gap-2">
               <Zap size={16} className="text-[#4AB295]" /> AI Capabilities
@@ -143,14 +162,57 @@ export default function Home() {
             </AnimatePresence>
           </div>
 
-          <div className="px-10 pb-10 pt-2">
+          <div className="px-10 pb-10 pt-2 relative">
+            {/* Image Preview Thumbnail */}
+            <AnimatePresence>
+              {selectedImage && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="absolute bottom-28 left-12 z-20"
+                >
+                  <div className="relative group">
+                    <img 
+                      src={selectedImage} 
+                      className="w-20 h-20 object-cover rounded-xl border-4 border-white shadow-lg" 
+                      alt="upload preview" 
+                    />
+                    <button 
+                      onClick={() => setSelectedImage(null)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <form onSubmit={handleSend} className="relative flex items-center">
+              <input 
+                type="file" 
+                className="hidden" 
+                ref={fileInputRef} 
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+              
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute left-4 z-10 p-2 text-[#4AB295] hover:bg-[#E8F0ED] rounded-full transition-colors"
+              >
+                <Plus size={24} />
+              </button>
+
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask anything..."
-                className="w-full bg-[#F3F8F6] border-none rounded-full py-7 px-8 text-lg focus-visible:ring-1 focus-visible:ring-[#4AB295]"
+                placeholder={selectedImage ? "Add a caption..." : "Ask anything..."}
+                className="w-full bg-[#F3F8F6] border-none rounded-full py-7 pl-14 pr-16 text-lg focus-visible:ring-1 focus-visible:ring-[#4AB295]"
               />
+              
               <Button
                 type="submit"
                 disabled={sendMessage.isPending}
