@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { useSendMessage } from "@/hooks/use-chat";
-import { Send, Sparkles, Activity } from "lucide-react";
+import { Send, Sparkles, Activity, ShieldCheck, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -71,6 +71,7 @@ export default function Home() {
 
       <main className="flex-1 flex flex-row gap-6 p-4 md:p-8 w-full max-w-7xl mx-auto h-[800px]">
         <aside className="w-64 hidden lg:flex flex-col gap-4">
+          {/* Necessities Dashboard */}
           <div className="bg-white p-6 rounded-[2rem] border border-[#E8F0ED] shadow-sm">
             <h3 className="text-[#1A3D35] font-bold mb-4 flex items-center gap-2">
               <Activity size={16} /> Necessities
@@ -85,6 +86,23 @@ export default function Home() {
                 <p className="text-[#4AB295] font-bold">
                   {sendMessage.isPending ? "Analyzing..." : "Ready"}
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Capabilities Dashboard */}
+          <div className="bg-white p-6 rounded-[2rem] border border-[#E8F0ED] shadow-sm">
+            <h3 className="text-[#1A3D35] font-bold mb-4 flex items-center gap-2">
+              <Zap size={16} className="text-[#4AB295]" /> AI Capabilities
+            </h3>
+            <div className="space-y-4">
+              <div className="p-3 bg-[#F3F8F6] rounded-2xl">
+                <p className="text-[10px] uppercase text-gray-400 font-bold">Identification</p>
+                <p className="text-[#4AB295] font-bold text-sm">Instant Pest ID</p>
+              </div>
+              <div className="p-3 bg-[#F3F8F6] rounded-2xl">
+                <p className="text-[10px] uppercase text-gray-400 font-bold">Treatment</p>
+                <p className="text-[#4AB295] font-bold text-sm">Eco-Safe Advice</p>
               </div>
             </div>
           </div>
