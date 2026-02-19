@@ -101,7 +101,7 @@ export default function Home() {
                 <p className="text-[#4AB295] font-bold text-sm">Instant Pest ID</p>
               </div>
               <div className="p-3 bg-[#F3F8F6] rounded-2xl">
-                <p className="text-[10px] uppercase text-gray-400 font-bold">Treatment</p>
+                <p className="text-[10px] uppercase text-gray-400 font-bold">Responses</p>
                 <p className="text-[#4AB295] font-bold text-sm">Eco-Safe Advice</p>
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function Home() {
         <div className="bg-[#E8F0ED] px-4 py-2 rounded-full flex items-center gap-2 border border-[#4AB295]/20">
           <div className={`w-2 h-2 rounded-full ${sendMessage.isPending ? "bg-orange-400 animate-pulse" : "bg-[#4AB295] animate-ping"}`} />
           <span className="text-[11px] font-bold text-[#1A3D35] uppercase tracking-widest">
-            {sendMessage.isPending ? "Processing Request..." : "AI Live Responses Activated"}
+            {sendMessage.isPending ? "Processing Request..." :  Live AI Responses Activated"}
           </span>
         </div>
       </footer>
