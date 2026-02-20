@@ -24,6 +24,11 @@ export default function Home() {
   const sendMessage = useSendMessage();
 
   const toggleGeoSense = () => {
+    if (location) {
+      setLocation(null);
+      return;
+    }
+
     if (!navigator.geolocation) return alert("Geolocation not supported by your browser.");
     setIsGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
@@ -142,12 +147,20 @@ export default function Home() {
                 <p className="text-[10px] uppercase text-gray-400 font-bold">Identification</p>
                 <p className="text-[#4AB295] font-bold text-sm">Instant Pest ID</p>
               </div>
+              
+              {/* FIXED: GeoSense is now consistently emerald with a pulse icon for Global Mode */}
               <div className="p-3 bg-[#F3F8F6] rounded-2xl">
                 <p className="text-[10px] uppercase text-gray-400 font-bold">GeoSense</p>
-                <p className={`text-sm font-bold ${location ? 'text-emerald-600' : 'text-gray-400'}`}>
-                  {location ? "Localization Active" : "Global Mode"}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[#4AB295] font-bold text-sm">
+                    {location ? "Localization Active" : "Global Mode"}
+                  </p>
+                  {!location && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#4AB295] animate-pulse" />
+                  )}
+                </div>
               </div>
+
               <div className="p-3 bg-[#F3F8F6] rounded-2xl">
                 <p className="text-[10px] uppercase text-gray-400 font-bold">Responses</p>
                 <p className="text-[#4AB295] font-bold text-sm">Eco-Safe Advice</p>
@@ -178,19 +191,6 @@ export default function Home() {
           </div>
 
           <div className="px-10 pb-10 pt-2 relative">
-            <AnimatePresence>
-              {selectedImage && (
-                <motion.div initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className="absolute bottom-28 left-12 z-20">
-                  <div className="relative group">
-                    <img src={selectedImage} className="w-20 h-20 object-cover rounded-xl border-4 border-white shadow-lg" alt="upload preview" />
-                    <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors">
-                      <X size={12} />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             <form onSubmit={handleSend} className="relative flex items-center">
               <input type="file" className="hidden" ref={fileInputRef} accept="image/*" onChange={handleImageUpload} />
               <button type="button" onClick={() => fileInputRef.current?.click()} className="absolute left-4 z-10 p-2 text-[#4AB295] hover:bg-[#E8F0ED] rounded-full transition-colors">
@@ -208,7 +208,11 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={toggleGeoSense}
-                  className={`p-2 rounded-full transition-all ${location ? 'bg-emerald-100 text-emerald-600 shadow-inner' : 'text-gray-400 hover:bg-gray-100'}`}
+                  className={`p-2 rounded-full transition-all ${
+                    location 
+                      ? 'bg-[#4AB295] text-white' 
+                      : 'bg-[#F3F8F6] text-[#4AB295] hover:bg-[#E8F0ED]'
+                  }`}
                 >
                   <Compass size={24} className={isGeoLoading ? "animate-spin" : ""} />
                 </button>
