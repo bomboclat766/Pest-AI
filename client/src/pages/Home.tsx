@@ -148,7 +148,6 @@ export default function Home() {
                 <p className="text-[#4AB295] font-bold text-sm">Instant Pest ID</p>
               </div>
               
-              {/* FIXED: GeoSense is now consistently emerald with a pulse icon for Global Mode */}
               <div className="p-3 bg-[#F3F8F6] rounded-2xl">
                 <p className="text-[10px] uppercase text-gray-400 font-bold">GeoSense</p>
                 <div className="flex items-center gap-2">
@@ -208,13 +207,18 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={toggleGeoSense}
-                  className={`p-2 rounded-full transition-all ${
+                  className={`p-2 rounded-full transition-all duration-300 ${
                     location 
-                      ? 'bg-[#4AB295] text-white' 
+                      ? 'bg-[#4AB295] text-white shadow-md' 
                       : 'bg-[#F3F8F6] text-[#4AB295] hover:bg-[#E8F0ED]'
                   }`}
                 >
-                  <Compass size={24} className={isGeoLoading ? "animate-spin" : ""} />
+                  <motion.div
+                    animate={{ rotate: location ? 180 : 0 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                  >
+                    <Compass size={24} className={isGeoLoading ? "animate-spin" : ""} />
+                  </motion.div>
                 </button>
                 <Button type="submit" disabled={sendMessage.isPending} className="h-12 w-12 rounded-full bg-[#4AB295] hover:bg-[#3d967d] transition-colors">
                   <Send size={20} />
@@ -226,13 +230,4 @@ export default function Home() {
       </main>
 
       <footer className="p-6 flex justify-center">
-        <div className="bg-[#E8F0ED] px-4 py-2 rounded-full flex items-center gap-2 border border-[#4AB295]/20">
-          <div className={`w-2 h-2 rounded-full ${sendMessage.isPending ? "bg-orange-400 animate-pulse" : "bg-[#4AB295] animate-ping"}`} />
-          <span className="text-[11px] font-bold text-[#1A3D35] uppercase tracking-widest">
-            {location ? "GeoSense Active: Local results enabled" : "AI Live Responses Activated"}
-          </span>
-        </div>
-      </footer>
-    </div>
-  );
-}
+        <div className="bg-[#E8F0ED] px
