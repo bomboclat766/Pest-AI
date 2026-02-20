@@ -230,4 +230,13 @@ export default function Home() {
       </main>
 
       <footer className="p-6 flex justify-center">
-        <div className="bg-[#E8F0ED] px
+        <div className="bg-[#E8F0ED] px-4 py-2 rounded-full flex items-center gap-2 border border-[#4AB295]/20">
+          <div className={`w-2 h-2 rounded-full ${sendMessage.isPending ? "bg-orange-400 animate-pulse" : "bg-[#4AB295] animate-ping"}`} />
+          <span className="text-[11px] font-bold text-[#1A3D35] uppercase tracking-widest">
+            {location ? "GeoSense Active: Local results enabled" : "AI Live Responses Activated"}
+          </span>
+        </div>
+      </footer>
+    </div>
+  );
+}
