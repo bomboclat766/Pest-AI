@@ -190,53 +190,11 @@ export default function Home() {
           </div>
 
           <div className="px-10 pb-10 pt-2 relative">
-            <form onSubmit={handleSend} className="relative flex items-center">
-              <input type="file" className="hidden" ref={fileInputRef} accept="image/*" onChange={handleImageUpload} />
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="absolute left-4 z-10 p-2 text-[#4AB295] hover:bg-[#E8F0ED] rounded-full transition-colors">
-                <Plus size={24} />
-              </button>
-
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder={location ? "Localized GeoSense active..." : "Ask anything..."}
-                className="w-full bg-[#F3F8F6] border-none rounded-full py-7 pl-14 pr-32 text-lg focus-visible:ring-1 focus-visible:ring-[#4AB295]"
-              />
+            <form onSubmit={handleSend} className="relative flex flex-col">
               
-              <div className="absolute right-4 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={toggleGeoSense}
-                  className={`p-2 rounded-full transition-all duration-300 ${
-                    location 
-                      ? 'bg-[#4AB295] text-white shadow-md' 
-                      : 'bg-[#F3F8F6] text-[#4AB295] hover:bg-[#E8F0ED]'
-                  }`}
-                >
-                  <motion.div
-                    animate={{ rotate: location ? 180 : 0 }}
-                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                  >
-                    <Compass size={24} className={isGeoLoading ? "animate-spin" : ""} />
-                  </motion.div>
-                </button>
-                <Button type="submit" disabled={sendMessage.isPending} className="h-12 w-12 rounded-full bg-[#4AB295] hover:bg-[#3d967d] transition-colors">
-                  <Send size={20} />
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </main>
-
-      <footer className="p-6 flex justify-center">
-        <div className="bg-[#E8F0ED] px-4 py-2 rounded-full flex items-center gap-2 border border-[#4AB295]/20">
-          <div className={`w-2 h-2 rounded-full ${sendMessage.isPending ? "bg-orange-400 animate-pulse" : "bg-[#4AB295] animate-ping"}`} />
-          <span className="text-[11px] font-bold text-[#1A3D35] uppercase tracking-widest">
-            {location ? "GeoSense Active: Local results enabled" : "AI Live Responses Activated"}
-          </span>
-        </div>
-      </footer>
-    </div>
-  );
-}
+              {/* IMAGE PREVIEW IN MESSAGE BOX */}
+              <AnimatePresence>
+                {selectedImage && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
