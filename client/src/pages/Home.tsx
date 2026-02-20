@@ -166,4 +166,67 @@ export default function Home() {
                 <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
                   <div className="flex gap-1.5 p-4 bg-[#F3F8F6] rounded-2xl rounded-bl-none">
                     {[0, 1, 2].map((i) => (
-                      <motion.div key={i} className="w-2 h-2 bg-[#4AB29
+                      <motion.div key={i} className="w-2 h-2 bg-[#4AB295] rounded-full" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }} />
+                    ))}
+                  </div>
+                  <span className="text-xs font-bold text-[#4AB295] uppercase tracking-tighter">AI Analyzing</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="px-10 pb-10 pt-2 relative">
+            <AnimatePresence>
+              {selectedImage && (
+                <motion.div initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className="absolute bottom-28 left-12 z-20">
+                  <div className="relative group">
+                    <img src={selectedImage} className="w-20 h-20 object-cover rounded-xl border-4 border-white shadow-lg" alt="upload preview" />
+                    <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors">
+                      <X size={12} />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <form onSubmit={handleSend} className="relative flex items-center">
+              <input type="file" className="hidden" ref={fileInputRef} accept="image/*" onChange={handleImageUpload} />
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="absolute left-4 z-10 p-2 text-[#4AB295] hover:bg-[#E8F0ED] rounded-full transition-colors">
+                <Plus size={24} />
+              </button>
+
+              <Input
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder={location ? "Localized GeoSense active..." : "Ask anything..."}
+                className="w-full bg-[#F3F8F6] border-none rounded-full py-7 pl-14 pr-32 text-lg focus-visible:ring-1 focus-visible:ring-[#4AB295]"
+              />
+              
+              <div className="absolute right-4 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={toggleGeoSense}
+                  className={`p-2 rounded-full transition-all ${location ? 'bg-emerald-100 text-emerald-600 shadow-inner' : 'text-gray-400 hover:bg-gray-100'}`}
+                >
+                  <Compass size={24} className={isGeoLoading ? "animate-spin" : ""} />
+                </button>
+                <Button type="submit" disabled={sendMessage.isPending} className="h-12 w-12 rounded-full bg-[#4AB295] hover:bg-[#3d967d] transition-colors">
+                  <Send size={20} />
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+
+      <footer className="p-6 flex justify-center">
+        <div className="bg-[#E8F0ED] px-4 py-2 rounded-full flex items-center gap-2 border border-[#4AB295]/20">
+          <div className={`w-2 h-2 rounded-full ${sendMessage.isPending ? "bg-orange-400 animate-pulse" : "bg-[#4AB295] animate-ping"}`} />
+          <span className="text-[11px] font-bold text-[#1A3D35] uppercase tracking-widest">
+            {location ? "GeoSense Active: Local results enabled" : "AI Live Responses Activated"}
+          </span>
+        </div>
+      </footer>
+    </div>
+  );
+}
