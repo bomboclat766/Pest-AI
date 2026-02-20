@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { useSendMessage } from "@/hooks/use-chat";
-import { Send, Sparkles, Activity, ShieldCheck, Zap, Plus, X, Image as ImageIcon } from "lucide-react";
+import { Send, Sparkles, Activity, ShieldCheck, Zap, Plus, X, Image as ImageIcon, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,9 +16,27 @@ export default function Home() {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isGeoLoading, setIsGeoLoading] = useState(false);
+  
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sendMessage = useSendMessage();
+
+  const toggleGeoSense = () => {
+    if (!navigator.geolocation) return alert("Geolocation not supported by your browser.");
+    setIsGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setIsGeoLoading(false);
+      },
+      () => {
+        setIsGeoLoading(false);
+        alert("Location access denied.");
+      }
+    );
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -33,9 +51,7 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-      };
+      reader.onloadend = () => setSelectedImage(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -44,7 +60,7 @@ export default function Home() {
     e?.preventDefault();
     if ((!inputValue.trim() && !selectedImage) || sendMessage.isPending) return;
 
-    // Create the message for your UI
+    const geoContext = location ? `[User Location: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}] ` : "";
     const userMsg = { 
       id: Date.now().toString(), 
       role: "user", 
@@ -56,20 +72,18 @@ export default function Home() {
     setInputValue("");
     setSelectedImage(null);
 
-    // FORMAT FOR AI VISION: 
-    // If there's an image, we send an array with text and the image URL.
     const aiContent = selectedImage 
       ? [
-          { type: "text", text: userMsg.content || "What is in this image?" },
+          { type: "text", text: `${geoContext}${userMsg.content || "What is in this image?"}` },
           { type: "image_url", image_url: { url: selectedImage } }
         ]
-      : userMsg.content;
+      : `${geoContext}${userMsg.content}`;
 
     try {
       const response = await sendMessage.mutateAsync({
-        message: aiContent, // Now passes the vision-ready format
+        message: aiContent,
         liveOnly: true,
-        model: "google/gemini-flash-1.5", // Ensure your hook passes this to OpenRouter
+        model: "google/gemini-flash-1.5",
       });
       setMessages((prev) => [
         ...prev,
@@ -129,6 +143,12 @@ export default function Home() {
                 <p className="text-[#4AB295] font-bold text-sm">Instant Pest ID</p>
               </div>
               <div className="p-3 bg-[#F3F8F6] rounded-2xl">
+                <p className="text-[10px] uppercase text-gray-400 font-bold">GeoSense</p>
+                <p className={`text-sm font-bold ${location ? 'text-emerald-600' : 'text-gray-400'}`}>
+                  {location ? "Localization Active" : "Global Mode"}
+                </p>
+              </div>
+              <div className="p-3 bg-[#F3F8F6] rounded-2xl">
                 <p className="text-[10px] uppercase text-gray-400 font-bold">Responses</p>
                 <p className="text-[#4AB295] font-bold text-sm">Eco-Safe Advice</p>
               </div>
@@ -143,104 +163,7 @@ export default function Home() {
                 <ChatMessage key={msg.id} {...msg} />
               ))}
               {sendMessage.isPending && (
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="flex items-center gap-3"
-                >
+                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
                   <div className="flex gap-1.5 p-4 bg-[#F3F8F6] rounded-2xl rounded-bl-none">
                     {[0, 1, 2].map((i) => (
-                      <motion.div
-                        key={i}
-                        className="w-2 h-2 bg-[#4AB295] rounded-full"
-                        animate={{ opacity: [0.3, 1, 0.3] }}
-                        transition={{
-                          duration: 1,
-                          repeat: Infinity,
-                          delay: i * 0.2,
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs font-bold text-[#4AB295] uppercase tracking-tighter">
-                    AI Analyzing
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div className="px-10 pb-10 pt-2 relative">
-            <AnimatePresence>
-              {selectedImage && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="absolute bottom-28 left-12 z-20"
-                >
-                  <div className="relative group">
-                    <img 
-                      src={selectedImage} 
-                      className="w-20 h-20 object-cover rounded-xl border-4 border-white shadow-lg" 
-                      alt="upload preview" 
-                    />
-                    <button 
-                      onClick={() => setSelectedImage(null)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <form onSubmit={handleSend} className="relative flex items-center">
-              <input 
-                type="file" 
-                className="hidden" 
-                ref={fileInputRef} 
-                accept="image/*"
-                onChange={handleImageUpload}
-              />
-              
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute left-4 z-10 p-2 text-[#4AB295] hover:bg-[#E8F0ED] rounded-full transition-colors"
-              >
-                <Plus size={24} />
-              </button>
-
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder={selectedImage ? "Add a caption..." : "Ask anything..."}
-                className="w-full bg-[#F3F8F6] border-none rounded-full py-7 pl-14 pr-16 text-lg focus-visible:ring-1 focus-visible:ring-[#4AB295]"
-              />
-              
-              <Button
-                type="submit"
-                disabled={sendMessage.isPending}
-                className="absolute right-2 h-12 w-12 rounded-full bg-[#4AB295] hover:bg-[#3d967d] transition-colors"
-              >
-                <Send size={20} />
-              </Button>
-            </form>
-          </div>
-        </div>
-      </main>
-
-      <footer className="p-6 flex justify-center">
-        <div className="bg-[#E8F0ED] px-4 py-2 rounded-full flex items-center gap-2 border border-[#4AB295]/20">
-          <div className={`w-2 h-2 rounded-full ${sendMessage.isPending ? "bg-orange-400 animate-pulse" : "bg-[#4AB295] animate-ping"}`} />
-          <span className="text-[11px] font-bold text-[#1A3D35] uppercase tracking-widest">
-            {sendMessage.isPending ? "Processing Request..." : "AI Live Responses Activated"}
-          </span>
-        </div>
-      </footer>
-    </div>
-  );
-}
+                      <motion.div key={i} className="w-2 h-2 bg-[#4AB29
