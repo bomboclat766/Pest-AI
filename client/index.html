@@ -6,7 +6,7 @@
     
     <title>PestAI</title>
 
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2350C878'/><text y='70' x='15' font-family='sans-serif' font-size='60' fill='white'>P</text></svg>" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2350C878'><path d='M12 2L14.85 8.65L22 9.82L17.11 15.14L18.03 22.35L12 19.27L5.97 22.35L6.89 15.14L2 9.82L9.15 8.65L12 2Z'/></svg>" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,9 +22,7 @@
             navigator.sendBeacon
               ? navigator.sendBeacon('/api/client-error', JSON.stringify(payload))
               : fetch('/api/client-error', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-          } catch (e) {
-            /* ignore */
-          }
+          } catch (e) { /* ignore */ }
         }
 
         function makeBanner(msg) {
@@ -43,9 +41,7 @@
             b.style.fontFamily = 'sans-serif';
             b.style.boxShadow = '0 6px 24px rgba(0,0,0,0.2)';
             document.body.appendChild(b);
-          } catch (e) {
-            /* ignore */
-          }
+          } catch (e) { /* ignore */ }
         }
 
         window.addEventListener('error', function (evt) {
