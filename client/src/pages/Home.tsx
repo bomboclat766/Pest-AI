@@ -169,7 +169,9 @@ export default function Home() {
                       <motion.div key={i} className="w-2 h-2 bg-[#4AB295] rounded-full" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }} />
                     ))}
                   </div>
-                  <span className="text-xs font-bold text-[#4AB295] uppercase tracking-tighter">AI Analyzing</span>
+                  <span className="text-xs font-bold text-[#4AB295] uppercase tracking-tighter">
+                    {location ? "Loading GeoSense" : "AI Analyzing"}
+                  </span>
                 </motion.div>
               )}
             </AnimatePresence>
