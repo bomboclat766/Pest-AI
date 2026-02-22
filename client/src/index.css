@@ -6,19 +6,21 @@
   --pest-primary: #4ab295;
   --pest-bg: #f8fbf9;
   --pest-dark: #1a3d35;
-  /* Fixes the "jumpy" layout when scrollbars appear */
+  /* Prevents layout shift when scrollbar appears */
   scrollbar-gutter: stable;
 }
 
 body {
   background-color: var(--pest-bg);
   color: var(--pest-dark);
-  overflow-x: hidden;
+  /* Standard professional sans-serif stack */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar */
+/* Scrollbar Fix: Minimalist and non-intrusive */
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -34,8 +36,8 @@ body {
   background: var(--pest-primary);
 }
 
-/* Fix for smooth auto-scrolling containers */
+/* Ensure the chat container doesn't bounce */
 .overflow-y-auto {
+  overflow-y: overlay; 
   scroll-behavior: smooth;
-  overscroll-behavior-y: contain;
 }
