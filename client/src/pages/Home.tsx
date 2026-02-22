@@ -1,138 +1,140 @@
 import { useState, useRef, useEffect } from "react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { useSendMessage } from "@/hooks/use-chat";
-import { Send, Sparkles, Plus, X, Compass, Menu, Trash2, Activity } from "lucide-react";
+import { Send, Sparkles, Plus, X, Image as ImageIcon, Menu, Settings, Bug, ShieldCheck, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-interface Message {
-  id: string;
-  role: "user" | "assistant" | "error";
-  content: string;
-  image?: string | null;
-}
+const SUGGESTIONS = [
+  { label: "Identify a bug", icon: <Bug size={14}/>, prompt: "Can you help me identify a pest from a description or photo?" },
+  { label: "Nairobi Fly safety", icon: <ShieldCheck size={14}/>, prompt: "What should I do if I find a Nairobi Fly (Paederus sabaeus) in my house?" },
+  { label: "Organic repellents", icon: <Leaf size={14}/>, prompt: "What are some eco-friendly ways to keep ants away from my kitchen?" },
+];
 
 export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([{ id: "w", role: "assistant", content: "Hello! How can I help you with pests today?" }]);
+  const [messages, setMessages] = useState<any[]>([{ id: "w", role: "assistant", content: "I am your PestAI assistant. How can I help you today?" }]);
   const [inputValue, setInputValue] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sendMessage = useSendMessage();
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-    }
+    if (scrollRef.current) scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, sendMessage.isPending]);
 
-  const handleSend = async (e?: React.FormEvent) => {
+  const handleSend = async (e?: React.FormEvent, overrideText?: string) => {
     e?.preventDefault();
-    if ((!inputValue.trim() && !selectedImage) || sendMessage.isPending) return;
+    const textToSend = overrideText || inputValue;
+    if ((!textToSend.trim() && !selectedImage) || sendMessage.isPending) return;
 
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: inputValue, image: selectedImage };
-    const history = [...messages, userMsg];
-    setMessages(history);
+    const userMsg = { id: Date.now().toString(), role: "user", content: textToSend, image: selectedImage };
+    setMessages(prev => [...prev, userMsg]);
     setInputValue("");
     setSelectedImage(null);
 
     try {
       const response = await sendMessage.mutateAsync({
-        message: selectedImage 
-          ? [{ type: "text", text: userMsg.content || "Identify" }, { type: "image_url", image_url: { url: selectedImage } }] 
-          : userMsg.content,
-        history: history.map(m => ({ role: m.role, content: m.content })),
+        message: selectedImage ? [{ type: "text", text: textToSend || "Identify" }, { type: "image_url", image_url: { url: selectedImage } }] : textToSend,
+        history: messages.map(m => ({ role: m.role, content: m.content })),
         liveOnly: true,
         model: "google/gemini-flash-1.5",
       });
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: response.response }]);
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: "assistant", content: response.response }]);
     } catch {
-      setMessages(prev => [...prev, { id: "err", role: "error", content: "I hit a snag. Please try again!" }]);
+      setMessages(prev => [...prev, { id: "e", role: "error", content: "Connection error. Please try again." }]);
     }
   };
 
   return (
-    <div className="h-screen bg-white flex flex-col font-sans text-[#1f1f1f] relative overflow-hidden">
-      {/* Sidebar */}
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]" />
-            <motion.aside initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
-              className="fixed right-0 top-0 h-full w-72 bg-white z-[70] p-6 shadow-2xl flex flex-col gap-6">
-              <div className="flex justify-between items-center"><span className="font-bold text-xl">Dashboard</span><Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)}><X size={20}/></Button></div>
-              <Button variant="outline" className="w-full justify-start gap-2 border-red-100 text-red-600 hover:bg-red-50" onClick={() => {setMessages([{id:"1", role:"assistant", content:"Reset."}]); setIsSidebarOpen(false);}}><Trash2 size={18}/> New Session</Button>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* FIXED HEADER */}
-      <header className="fixed top-0 left-0 right-0 h-16 border-b border-gray-100 bg-white/80 backdrop-blur-xl z-50 flex items-center justify-between px-6">
-        <div className="flex items-center gap-2"><Sparkles className="text-[#4AB295]" size={22} /><span className="font-bold text-xl text-[#1A3D35]">PestControlAI</span></div>
-        <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)} className="rounded-full hover:bg-gray-100"><Menu size={24} /></Button>
+    <div className="h-screen bg-white flex flex-col relative overflow-hidden font-sans">
+      <header className="flex items-center justify-between px-6 h-16 bg-white/50 backdrop-blur-sm fixed top-0 w-full z-50">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-blue-50 rounded-lg"><Sparkles className="text-blue-500" size={18} /></div>
+          <span className="font-medium text-[15px] text-slate-700">PestAI <span className="text-slate-400 font-normal">v2026.1</span></span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="rounded-full text-slate-500"><Settings size={20} /></Button>
+          <Button variant="ghost" size="icon" className="rounded-full text-slate-500"><Menu size={20} /></Button>
+        </div>
       </header>
 
-      {/* Main Area */}
-      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 pt-16">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto pt-10 pb-44 custom-scrollbar">
+      <main className="flex-1 flex flex-col overflow-hidden pt-16">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar pb-64">
           <AnimatePresence mode="popLayout">
             {messages.length <= 1 && (
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="py-20 text-center">
-                <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#4AB295] to-[#1A3D35] bg-clip-text text-transparent mb-4">What's bugging you?</h2>
-                <p className="text-gray-400 text-xl font-light">Identify pests and get eco-safe solutions instantly.</p>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-32 text-center max-w-2xl mx-auto px-6">
+                <h1 className="text-4xl md:text-5xl font-medium text-slate-800 mb-6 bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">Hello, I'm PestAI</h1>
+                <p className="text-slate-500 text-lg">Your specialized intelligence for local Nairobi species and eco-safe treatment plans.</p>
               </motion.div>
             )}
             {messages.map((msg) => <ChatMessage key={msg.id} {...msg} />)}
-            
-            {/* REPLIT THINKING ANIMATION */}
             {sendMessage.isPending && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4 items-center ml-1 mb-10">
-                <div className="relative w-9 h-9">
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
-                    className="absolute inset-0 border-2 border-dashed border-[#4AB295]/40 rounded-full" />
-                  <div className="absolute inset-0 flex items-center justify-center text-[#4AB295]"><Sparkles size={16} className="animate-pulse" /></div>
+              <div className="max-w-3xl mx-auto flex gap-6 px-4 py-8 animate-pulse">
+                <div className="w-10 h-10 rounded-full bg-slate-50 border border-blue-50 flex items-center justify-center text-blue-300"><Sparkles size={20} /></div>
+                <div className="flex-1 space-y-3 pt-2">
+                  <div className="h-2 bg-slate-100 rounded-full w-3/4"></div>
+                  <div className="h-2 bg-slate-100 rounded-full w-1/2"></div>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-gray-400">Pest Intelligence analyzing...</span>
-                  <div className="flex gap-1">
-                    {[0, 1, 2].map((i) => <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }} className="w-1 h-1 bg-[#4AB295] rounded-full" />)}
-                  </div>
-                </div>
-              </motion.div>
+              </div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Input Pill */}
-        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent pb-8 px-4 z-40">
-          <div className="max-w-3xl mx-auto">
-            <form onSubmit={handleSend} className="bg-[#f0f4f9] rounded-[32px] p-2 shadow-sm border border-transparent focus-within:border-[#4AB295]/20 transition-all">
+        {/* Floating Input Area */}
+        <div className="absolute bottom-0 w-full bg-gradient-to-t from-white via-white to-transparent pt-10 pb-6 px-4">
+          <div className="max-w-3xl mx-auto space-y-4">
+            
+            {/* SUGGESTION CHIPS */}
+            {messages.length <= 1 && (
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                {SUGGESTIONS.map((item, i) => (
+                  <motion.button
+                    key={i}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    onClick={() => handleSend(undefined, item.prompt)}
+                    className="flex items-center gap-2 whitespace-nowrap bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm"
+                  >
+                    <span className="text-blue-500">{item.icon}</span>
+                    {item.label}
+                  </motion.button>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={handleSend} className="relative bg-[#f0f4f9] hover:bg-[#e9eef6] transition-colors rounded-[32px] p-2 pr-4 shadow-sm focus-within:bg-white focus-within:shadow-md border border-transparent focus-within:border-blue-100">
               {selectedImage && (
-                <div className="p-3 relative inline-block">
-                  <img src={selectedImage} className="w-20 h-20 object-cover rounded-2xl border-2 border-white shadow-md" />
-                  <button type="button" onClick={() => setSelectedImage(null)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1"><X size={12}/></button>
+                <div className="absolute -top-24 left-4 p-2 bg-white rounded-2xl shadow-xl border border-slate-100">
+                  <img src={selectedImage} className="w-16 h-16 object-cover rounded-xl" alt="Preview" />
+                  <button type="button" onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-slate-800 text-white rounded-full p-1"><X size={10} /></button>
                 </div>
               )}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center">
                 <input type="file" className="hidden" ref={fileInputRef} accept="image/*" onChange={(e) => {
                   const f = e.target.files?.[0];
                   if(f){ const r=new FileReader(); r.onloadend=()=>setSelectedImage(r.result as string); r.readAsDataURL(f); }
                 }} />
-                <Button type="button" variant="ghost" onClick={() => fileInputRef.current?.click()} className="rounded-full h-12 w-12 text-gray-500"><Plus size={24}/></Button>
-                <Input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Describe the bug or upload a photo..." className="bg-transparent border-none shadow-none text-lg py-7 focus-visible:ring-0" />
-                <div className="flex items-center gap-1 pr-2">
-                  <button type="button" onClick={() => setLocation(location ? null : {lat:-1.28, lng:36.82})} className={cn("p-3 rounded-full", location ? "text-[#4AB295] bg-[#4AB295]/10" : "text-gray-400")}><Compass size={24}/></button>
-                  {(inputValue || selectedImage) && <Button type="submit" disabled={sendMessage.isPending} className="rounded-full bg-[#4AB295] h-12 w-12 p-0 shadow-lg"><Send size={20} className="text-white" /></Button>}
+                <Button type="button" variant="ghost" onClick={() => fileInputRef.current?.click()} className="rounded-full text-slate-600"><ImageIcon size={22} /></Button>
+                <input 
+                  value={inputValue} 
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Ask PestAI..." 
+                  className="flex-1 bg-transparent border-none outline-none text-[16px] px-4 py-3 placeholder:text-slate-500"
+                />
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="ghost" className="rounded-full text-blue-500"><Plus size={22} /></Button>
+                  {(inputValue || selectedImage) && (
+                    <button type="submit" className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-all">
+                      <Send size={22} />
+                    </button>
+                  )}
                 </div>
               </div>
             </form>
+            <p className="text-[11px] text-center text-slate-400">PestAI uses advanced intelligence. Verify information for safety.</p>
           </div>
         </div>
       </main>
