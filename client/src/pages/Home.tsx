@@ -1,143 +1,276 @@
 import { useState, useRef, useEffect } from "react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { useSendMessage } from "@/hooks/use-chat";
-import { Send, Sparkles, Plus, X, Image as ImageIcon, Menu, Settings, Bug, ShieldCheck, Leaf } from "lucide-react";
+import { Send, Sparkles, Activity, ShieldCheck, Zap, Plus, X, Image as ImageIcon, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
-
-const SUGGESTIONS = [
-  { label: "Identify a bug", icon: <Bug size={14}/>, prompt: "Can you help me identify a pest from a description or photo?" },
-  { label: "Nairobi Fly safety", icon: <ShieldCheck size={14}/>, prompt: "What should I do if I find a Nairobi Fly (Paederus sabaeus) in my house?" },
-  { label: "Organic repellents", icon: <Leaf size={14}/>, prompt: "What are some eco-friendly ways to keep ants away from my kitchen?" },
-];
 
 export default function Home() {
-  const [messages, setMessages] = useState<any[]>([{ id: "w", role: "assistant", content: "I am your PestAI assistant. How can I help you today?" }]);
-  const [inputValue, setInputValue] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const sendMessage = useSendMessage();
+  const [messages, setMessages] = useState([
+    {
+      id: "welcome",
+      role: "assistant",
+      content: "Hello! I'm your AI Pest Control Assistant. How can I help you today?",
+    },
+  ]);
+  const [inputValue, setInputValue] = useState("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isGeoLoading, setIsGeoLoading] = useState(false);
+  
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const sendMessage = useSendMessage();
 
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, sendMessage.isPending]);
+  const toggleGeoSense = () => {
+    if (location) {
+      setLocation(null);
+      return;
+    }
 
-  const handleSend = async (e?: React.FormEvent, overrideText?: string) => {
-    e?.preventDefault();
-    const textToSend = overrideText || inputValue;
-    if ((!textToSend.trim() && !selectedImage) || sendMessage.isPending) return;
+    if (!navigator.geolocation) return alert("Geolocation not supported by your browser.");
+    setIsGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setIsGeoLoading(false);
+      },
+      () => {
+        setIsGeoLoading(false);
+        alert("Location access denied.");
+      }
+    );
+  };
 
-    const userMsg = { id: Date.now().toString(), role: "user", content: textToSend, image: selectedImage };
-    setMessages(prev => [...prev, userMsg]);
-    setInputValue("");
-    setSelectedImage(null);
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [messages, sendMessage.isPending]);
 
-    try {
-      const response = await sendMessage.mutateAsync({
-        message: selectedImage ? [{ type: "text", text: textToSend || "Identify" }, { type: "image_url", image_url: { url: selectedImage } }] : textToSend,
-        history: messages.map(m => ({ role: m.role, content: m.content })),
-        liveOnly: true,
-        model: "google/gemini-flash-1.5",
-      });
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: "assistant", content: response.response }]);
-    } catch {
-      setMessages(prev => [...prev, { id: "e", role: "error", content: "Connection error. Please try again." }]);
-    }
-  };
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setSelectedImage(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
 
-  return (
-    <div className="h-screen bg-white flex flex-col relative overflow-hidden font-sans">
-      <header className="flex items-center justify-between px-6 h-16 bg-white/50 backdrop-blur-sm fixed top-0 w-full z-50">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-blue-50 rounded-lg"><Sparkles className="text-blue-500" size={18} /></div>
-          <span className="font-medium text-[15px] text-slate-700">PestAI <span className="text-slate-400 font-normal">v2026.1</span></span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="rounded-full text-slate-500"><Settings size={20} /></Button>
-          <Button variant="ghost" size="icon" className="rounded-full text-slate-500"><Menu size={20} /></Button>
-        </div>
-      </header>
+  const handleSend = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if ((!inputValue.trim() && !selectedImage) || sendMessage.isPending) return;
 
-      <main className="flex-1 flex flex-col overflow-hidden pt-16">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar pb-64">
-          <AnimatePresence mode="popLayout">
-            {messages.length <= 1 && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-32 text-center max-w-2xl mx-auto px-6">
-                <h1 className="text-4xl md:text-5xl font-medium text-slate-800 mb-6 bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">Hello, I'm PestAI</h1>
-                <p className="text-slate-500 text-lg">Your specialized intelligence for local Nairobi species and eco-safe treatment plans.</p>
-              </motion.div>
-            )}
-            {messages.map((msg) => <ChatMessage key={msg.id} {...msg} />)}
-            {sendMessage.isPending && (
-              <div className="max-w-3xl mx-auto flex gap-6 px-4 py-8 animate-pulse">
-                <div className="w-10 h-10 rounded-full bg-slate-50 border border-blue-50 flex items-center justify-center text-blue-300"><Sparkles size={20} /></div>
-                <div className="flex-1 space-y-3 pt-2">
-                  <div className="h-2 bg-slate-100 rounded-full w-3/4"></div>
-                  <div className="h-2 bg-slate-100 rounded-full w-1/2"></div>
-                </div>
-              </div>
-            )}
-          </AnimatePresence>
-        </div>
+    const geoContext = location ? `[User Location: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}] ` : "";
+    const userMsg = { 
+      id: Date.now().toString(), 
+      role: "user", 
+      content: inputValue,
+      image: selectedImage 
+    };
+    
+    // Memory: Create the updated history array
+    const updatedHistory = [...messages, userMsg];
+    setMessages(updatedHistory);
+    setInputValue("");
+    setSelectedImage(null);
 
-        {/* Floating Input Area */}
-        <div className="absolute bottom-0 w-full bg-gradient-to-t from-white via-white to-transparent pt-10 pb-6 px-4">
-          <div className="max-w-3xl mx-auto space-y-4">
-            
-            {/* SUGGESTION CHIPS */}
-            {messages.length <= 1 && (
-              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                {SUGGESTIONS.map((item, i) => (
-                  <motion.button
-                    key={i}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    onClick={() => handleSend(undefined, item.prompt)}
-                    className="flex items-center gap-2 whitespace-nowrap bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm"
-                  >
-                    <span className="text-blue-500">{item.icon}</span>
-                    {item.label}
-                  </motion.button>
-                ))}
-              </div>
-            )}
+    // AI Context Preparation
+    let aiContent;
+    if (selectedImage) {
+      aiContent = [
+        { type: "text", text: `${geoContext}${userMsg.content || "What is in this image?"}` },
+        { type: "image_url", image_url: { url: selectedImage } }
+      ];
+    } else {
+      aiContent = `${geoContext}${userMsg.content}`;
+    }
 
-            <form onSubmit={handleSend} className="relative bg-[#f0f4f9] hover:bg-[#e9eef6] transition-colors rounded-[32px] p-2 pr-4 shadow-sm focus-within:bg-white focus-within:shadow-md border border-transparent focus-within:border-blue-100">
-              {selectedImage && (
-                <div className="absolute -top-24 left-4 p-2 bg-white rounded-2xl shadow-xl border border-slate-100">
-                  <img src={selectedImage} className="w-16 h-16 object-cover rounded-xl" alt="Preview" />
-                  <button type="button" onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-slate-800 text-white rounded-full p-1"><X size={10} /></button>
-                </div>
-              )}
-              <div className="flex items-center">
-                <input type="file" className="hidden" ref={fileInputRef} accept="image/*" onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if(f){ const r=new FileReader(); r.onloadend=()=>setSelectedImage(r.result as string); r.readAsDataURL(f); }
-                }} />
-                <Button type="button" variant="ghost" onClick={() => fileInputRef.current?.click()} className="rounded-full text-slate-600"><ImageIcon size={22} /></Button>
-                <input 
-                  value={inputValue} 
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Ask PestAI..." 
-                  className="flex-1 bg-transparent border-none outline-none text-[16px] px-4 py-3 placeholder:text-slate-500"
-                />
-                <div className="flex items-center gap-2">
-                  <Button type="button" variant="ghost" className="rounded-full text-blue-500"><Plus size={22} /></Button>
-                  {(inputValue || selectedImage) && (
-                    <button type="submit" className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-all">
-                      <Send size={22} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </form>
-            <p className="text-[11px] text-center text-slate-400">PestAI uses advanced intelligence. Verify information for safety.</p>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
+    try {
+      // Memory: Pass the updatedHistory so the AI remembers previous queries
+      const response = await sendMessage.mutateAsync({
+        message: aiContent,
+        history: updatedHistory.map(m => ({ role: m.role, content: m.content })),
+        liveOnly: true,
+        model: "google/gemini-flash-1.5",
+      });
+
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now().toString(), role: "assistant", content: response.response },
+      ]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { id: "err", role: "error", content: "Connection error." },
+      ]);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F8FBF9] flex flex-col font-sans">
+      <header className="p-6 flex justify-between items-center max-w-7xl mx-auto w-full">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#4AB295] rounded-xl flex items-center justify-center shadow-sm">
+            <Sparkles className="text-white" size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-[#1A3D35]">
+              PestControl<span className="text-[#4AB295]">AI</span>
+            </h1>
+            <p className="text-xs text-gray-500">Smart Identification & Advice</p>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 flex flex-row gap-6 p-4 md:p-8 w-full max-w-7xl mx-auto h-[800px]">
+        <aside className="w-64 hidden lg:flex flex-col gap-4">
+          <div className="bg-white p-6 rounded-[2rem] border border-[#E8F0ED] shadow-sm">
+            <h3 className="text-[#1A3D35] font-bold mb-4 flex items-center gap-2">
+              <Activity size={16} /> Necessities
+            </h3>
+            <div className="space-y-4">
+              <div className="p-3 bg-[#F3F8F6] rounded-2xl">
+                <p className="text-[10px] uppercase text-gray-400 font-bold">Safety Level</p>
+                <p className="text-[#4AB295] font-bold">99.9% Secure</p>
+              </div>
+              <div className="p-3 bg-[#F3F8F6] rounded-2xl">
+                <p className="text-[10px] uppercase text-gray-400 font-bold">AI Status</p>
+                <p className="text-[#4AB295] font-bold">
+                  {sendMessage.isPending ? "Analyzing..." : "Ready"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-[2rem] border border-[#E8F0ED] shadow-sm">
+            <h3 className="text-[#1A3D35] font-bold mb-4 flex items-center gap-2">
+              <Zap size={16} className="text-[#4AB295]" /> AI Capabilities
+            </h3>
+            <div className="space-y-4">
+              <div className="p-3 bg-[#F3F8F6] rounded-2xl">
+                <p className="text-[10px] uppercase text-gray-400 font-bold">Identification</p>
+                <p className="text-[#4AB295] font-bold text-sm">Instant Pest ID</p>
+              </div>
+              
+              <div className="p-3 bg-[#F3F8F6] rounded-2xl">
+                <p className="text-[10px] uppercase text-gray-400 font-bold">GeoSense</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[#4AB295] font-bold text-sm">
+                    {location ? "Localization Active" : "Global Mode"}
+                  </p>
+                  {!location && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#4AB295] animate-pulse" />
+                  )}
+                </div>
+              </div>
+
+              <div className="p-3 bg-[#F3F8F6] rounded-2xl">
+                <p className="text-[10px] uppercase text-gray-400 font-bold">Responses</p>
+                <p className="text-[#4AB295] font-bold text-sm">Eco-Safe Advice</p>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <div className="flex-1 bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-[#E8F0ED] flex flex-col relative overflow-hidden">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-10 space-y-8">
+            <AnimatePresence mode="popLayout">
+              {messages.map((msg) => (
+                <ChatMessage key={msg.id} {...msg} />
+              ))}
+              {sendMessage.isPending && (
+                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
+                  <div className="flex gap-1.5 p-4 bg-[#F3F8F6] rounded-2xl rounded-bl-none">
+                    {[0, 1, 2].map((i) => (
+                      <motion.div key={i} className="w-2 h-2 bg-[#4AB295] rounded-full" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }} />
+                    ))}
+                  </div>
+                  <span className="text-xs font-bold text-[#4AB295] uppercase tracking-tighter">
+                    {location ? "Loading GeoSense" : "AI Analyzing"}
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="px-10 pb-10 pt-2 relative">
+            <form onSubmit={handleSend} className="relative flex flex-col">
+              
+              <AnimatePresence>
+                {selectedImage && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                    className="absolute bottom-full mb-4 left-4 z-20"
+                  >
+                    <div className="relative group">
+                      <img src={selectedImage} alt="Preview" className="w-24 h-24 object-cover rounded-2xl border-4 border-white shadow-lg" />
+                      <button 
+                        type="button"
+                        onClick={() => setSelectedImage(null)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="relative flex items-center">
+                <input type="file" className="hidden" ref={fileInputRef} accept="image/*" onChange={handleImageUpload} />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="absolute left-4 z-10 p-2 text-[#4AB295] hover:bg-[#E8F0ED] rounded-full transition-colors">
+                  <Plus size={24} />
+                </button>
+
+                <Input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder={location ? "Localized GeoSense active..." : "Ask anything..."}
+                  className="w-full bg-[#F3F8F6] border-none rounded-full py-7 pl-14 pr-32 text-lg focus-visible:ring-1 focus-visible:ring-[#4AB295]"
+                />
+                
+                <div className="absolute right-4 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleGeoSense}
+                    className={`p-2 rounded-full transition-all duration-300 ${
+                      location 
+                        ? 'bg-[#4AB295] text-white shadow-md' 
+                        : 'bg-[#F3F8F6] text-[#4AB295] hover:bg-[#E8F0ED]'
+                    }`}
+                  >
+                    <motion.div
+                      animate={{ rotate: location ? 180 : 0 }}
+                      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                    >
+                      <Compass size={24} className={isGeoLoading ? "animate-spin" : ""} />
+                    </motion.div>
+                  </button>
+                  <Button type="submit" disabled={sendMessage.isPending} className="h-12 w-12 rounded-full bg-[#4AB295] hover:bg-[#3d967d] transition-colors">
+                    <Send size={20} />
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+
+      <footer className="p-6 flex justify-center">
+        <div className="bg-[#E8F0ED] px-4 py-2 rounded-full flex items-center gap-2 border border-[#4AB295]/20">
+          <div className={`w-2 h-2 rounded-full ${sendMessage.isPending ? "bg-orange-400 animate-pulse" : "bg-[#4AB295] animate-ping"}`} />
+          <span className="text-[11px] font-bold text-[#1A3D35] uppercase tracking-widest">
+            {location ? "GeoSense Active: Local results enabled" : "AI Live Responses Activated"}
+          </span>
+        </div>
+      </footer>
+    </div>
+  );
+} 
