@@ -12,23 +12,27 @@ interface ChatMessageProps {
   note?: string;
 }
 
-export function ChatMessage({ role, content, image, note }: ChatMessageProps) {
+export function ChatMessage({ role, content = "", image, note }: ChatMessageProps) {
   const isUser = role === "user";
   const isError = role === "error";
-  const [displayedContent, setDisplayedContent] = useState(isUser || isError ? content : "");
+  
+  // Guard against undefined/null content to prevent ReactMarkdown crashes
+  const safeContent = content || "";
+  const [displayedContent, setDisplayedContent] = useState(isUser || isError ? safeContent : "");
 
   useEffect(() => {
-    if (!isUser && !isError && content) {
+    if (!isUser && !isError && safeContent) {
       let index = 0;
       const intervalId = setInterval(() => {
-        setDisplayedContent(content.slice(0, index + 1));
+        setDisplayedContent(safeContent.slice(0, index + 1));
         index++;
-        if (index >= content.length) clearInterval(intervalId);
-      }, 2); // Faster typing for a snappier feel
+        if (index >= safeContent.length) clearInterval(intervalId);
+      }, 5); 
       return () => clearInterval(intervalId);
+    } else {
+      setDisplayedContent(safeContent);
     }
-    setDisplayedContent(content);
-  }, [content, isUser, isError]);
+  }, [safeContent, isUser, isError]);
 
   return (
     <motion.div
@@ -37,10 +41,10 @@ export function ChatMessage({ role, content, image, note }: ChatMessageProps) {
       className={cn("flex w-full gap-4 mb-10", isUser ? "flex-row-reverse" : "flex-row")}
     >
       <div className={cn(
-        "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1",
+        "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 shadow-sm",
         isUser ? "bg-[#4AB295] text-white" : "bg-[#f0f4f9] text-[#4AB295]"
       )}>
-        {isUser ? <User size={16} /> : <Bot size={16} />}
+        {isUser ? <User size={16} /> : isError ? <Info size={16} className="text-red-500" /> : <Bot size={16} />}
       </div>
 
       <div className={cn("flex flex-col max-w-[85%]", isUser && "items-end")}>
@@ -48,16 +52,20 @@ export function ChatMessage({ role, content, image, note }: ChatMessageProps) {
           "text-[1rem] leading-7 transition-all",
           isUser 
             ? "bg-[#f0f4f9] px-5 py-3 rounded-[24px] text-gray-800" 
-            : "text-gray-800 pt-1" // AI has no bubble, just clean text
+            : isError 
+              ? "text-red-600 bg-red-50/50 px-4 py-2 rounded-xl border border-red-100" 
+              : "text-gray-800 pt-1"
         )}>
           {isUser && image && (
-            <div className="mb-3 overflow-hidden rounded-xl max-w-[240px]">
+            <div className="mb-3 overflow-hidden rounded-xl max-w-[240px] shadow-sm">
               <img src={image} alt="Upload" className="w-full object-cover" />
             </div>
           )}
           
-          <div className="prose prose-emerald max-w-none prose-p:leading-relaxed">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedContent}</ReactMarkdown>
+          <div className="prose prose-emerald max-w-none prose-p:leading-relaxed prose-pre:bg-[#f8fafd] prose-pre:text-gray-700">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {displayedContent || " "}
+            </ReactMarkdown>
           </div>
         </div>
         
