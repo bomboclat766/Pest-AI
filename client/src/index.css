@@ -1,103 +1,41 @@
-/* Import Gemini-style Handwriting (Instrument Sans) */
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
-  --primary: 164 42% 48%; /* Your PestAI Green #4AB295 */
-  --radius: 1rem;
+  --pest-primary: #4ab295;
+  --pest-bg: #f8fbf9;
+  --pest-dark: #1a3d35;
+  /* Fixes the "jumpy" layout when scrollbars appear */
+  scrollbar-gutter: stable;
 }
 
-@layer base {
-  body {
-    /* Apply the new Gemini handwriting globally */
-    font-family: 'Instrument Sans', sans-serif;
-    @apply bg-background text-foreground antialiased;
-    overflow: hidden;
-    height: 100vh;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    /* Use Outfit for headings to give it that modern Google feel */
-    font-family: 'Outfit', sans-serif;
-    @apply font-semibold tracking-tight;
-  }
+body {
+  background-color: var(--pest-bg);
+  color: var(--pest-dark);
+  overflow-x: hidden;
 }
 
-/* Custom Scrollbar - Gemini Aesthetic */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
 }
-.custom-scrollbar::-webkit-scrollbar-track {
+
+::-webkit-scrollbar-track {
   background: transparent;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(74, 178, 149, 0.2);
-  border-radius: 20px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(74, 178, 149, 0.4);
+
+::-webkit-scrollbar-thumb {
+  background: #d1dfd9;
+  border-radius: 10px;
 }
 
-/* AI Response Typography - Exact Gemini Proportions */
-.assistant-response {
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 1.1rem !important;
-  line-height: 1.75 !important;
-  color: #1f1f1f !important;
-  letter-spacing: -0.01em;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pest-primary);
 }
 
-.assistant-response h2, .assistant-response h3 {
-  color: #1A3D35;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 600;
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
-  font-size: 1.4rem;
-}
-
-.assistant-response table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1.5rem 0;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.08);
-  font-size: 0.95rem;
-}
-
-.assistant-response th, .assistant-response td {
-  padding: 14px;
-  border: 1px solid #f1f3f4;
-  text-align: left;
-}
-
-.assistant-response th {
-  background: #f8fafd;
-  color: #4AB295;
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-}
-
-.assistant-response tr:nth-child(even) {
-  background-color: #fafbfb;
-}
-
-/* Subtle Link Styling like Gemini */
-.assistant-response a {
-  color: #1a73e8;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.assistant-response a:hover {
-  text-decoration: underline;
+/* Fix for smooth auto-scrolling containers */
+.overflow-y-auto {
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
 }
