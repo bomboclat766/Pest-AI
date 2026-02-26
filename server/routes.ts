@@ -1,6 +1,7 @@
 import express, { Express } from "express";
 import type { Server } from "http";
-import fetch from "node-fetch"; 
+// Note: Top-level fetch import removed to prevent Render deployment crashes.
+// We use dynamic imports inside the routes instead.
 import { api } from "@shared/routes";
 
 // Business logic middleware
@@ -24,14 +25,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/login", (req: any, res: any) => {
     const { code } = req.body;
     const role = code === "12345" ? "business" : "regular";
-    req.user.role = role;
+    req.user.role = role; 
     return res.json({ success: true, role });
   });
 
-  // Chat Send Route - REMOVED LOCAL FALLBACK FOR PRODUCTION
+  // Chat Send Route - FIXED FOR PRODUCTION
   app.post(api.chat.send.path, async (req: any, res: any) => {
     try {
       const { message, history } = req.body;
+      
+      // FIX: Use dynamic import for node-fetch to avoid ESM/CommonJS conflicts
+      const fetch = (await import("node-fetch")).default as any;
       
       // Professional System Prompt for 2026 Edition
       const systemPrompt = `You are the Professional Pest Control Intelligence Assistant (2026 Edition). 
@@ -90,6 +94,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
 
     try {
+      // Use dynamic fetch here as well to prevent crashes
+      const fetch = (await import("node-fetch")).default as any;
       const url = `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${destLng},${destLat}?overview=full&geometries=geojson`;
       const response = await fetch(url);
       const data: any = await response.json();
