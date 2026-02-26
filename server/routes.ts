@@ -2,10 +2,8 @@ import express, { Express } from "express";
 import type { Server } from "http";
 import fetch from "node-fetch"; 
 import { api } from "@shared/routes";
-import { getLocalReply } from "./fallback";
 
-// Middleware: In a real app, use sessions/JWT. For this demo, 
-// we check the role we manually attached in the previous middleware.
+// Business logic middleware
 function requireBusiness(req: any, res: any, next: any) {
   if (req.user?.role !== "business") {
     return res.status(403).json({ error: "Access denied. Business role required." });
@@ -16,61 +14,69 @@ function requireBusiness(req: any, res: any, next: any) {
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   app.use(express.json());
 
-  // Attach default user role (simulating session/auth state)
+  // Attach default user role
   app.use((req: any, _res: any, next: any) => {
     if (!req.user) req.user = { role: "regular" };
     next();
   });
 
-  // Demo Login: Updates the "session" role
+  // Login Logic
   app.post("/api/login", (req: any, res: any) => {
     const { code } = req.body;
     const role = code === "12345" ? "business" : "regular";
-    req.user.role = role; // Update the existing object
+    req.user.role = role;
     return res.json({ success: true, role });
   });
 
-  // Chat Send Route
+  // Chat Send Route - REMOVED LOCAL FALLBACK FOR PRODUCTION
   app.post(api.chat.send.path, async (req: any, res: any) => {
     try {
-      const { message, history, liveOnly } = req.body;
-      const systemPrompt = `You are the Professional Pest Control Intelligence Assistant (2026 Edition). Developed by Osteen. Use Markdown tables for comparisons.`;
+      const { message, history } = req.body;
+      
+      // Professional System Prompt for 2026 Edition
+      const systemPrompt = `You are the Professional Pest Control Intelligence Assistant (2026 Edition). 
+      Developed by Osteen. You are based in Nairobi, Kenya. 
+      Provide warm, empathetic, and expert advice on pest control. 
+      Use Markdown tables for comparisons. Use LaTeX for chemical formulas if mentioned.`;
 
-      // Construct messages including history if provided
       const chatMessages = [
         { role: "system", content: systemPrompt },
         ...(history || []),
         { role: "user", content: message }
       ];
 
-      try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://pest-ai.onrender.com",
-            "X-Title": "Pest AI Assistant"
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.0-flash-001",
-            messages: chatMessages
-          })
+      // THE REAL API CALL
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://pest-ai-1.onrender.com",
+          "X-Title": "Pest AI Sales Desk"
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.0-flash-001",
+          messages: chatMessages,
+          temperature: 0.7
+        })
+      });
+
+      const data: any = await response.json();
+
+      if (response.ok && data.choices?.[0]?.message?.content) {
+        return res.json({ 
+          response: data.choices[0].message.content, 
+          isFallback: false 
         });
-
-        const data: any = await response.json();
-
-        if (response.ok && data.choices?.[0]?.message?.content) {
-          return res.json({ response: data.choices[0].message.content, isFallback: false });
-        } else {
-          throw new Error(data.error?.message || "OpenRouter error");
-        }
-      } catch (aiErr: any) {
-        if (liveOnly) return res.status(503).json({ message: "AI Unavailable" });
-        const local = getLocalReply(typeof message === 'string' ? message : "Analyze image");
-        return res.json({ response: local.answer, isFallback: true });
+      } else {
+        console.error("OpenRouter Error Details:", data);
+        return res.status(502).json({ 
+          message: "AI Service is currently unavailable. Please check API Key.",
+          details: data.error?.message 
+        });
       }
     } catch (err) {
+      console.error("Internal Server Error:", err);
       res.status(500).json({ message: "Internal Server Error" });
     }
   });
