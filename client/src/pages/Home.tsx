@@ -1,21 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+// Move CSS import to global index.css or _app.tsx
+// import "leaflet/dist/leaflet.css";
 
 import { ChatMessage } from "@/components/ChatMessage";
 import { useSendMessage } from "@/hooks/use-chat";
-import { Send, Sparkles, Activity, ShieldCheck, Zap, Plus, X, Image as ImageIcon, Compass } from "lucide-react";
+import { Send, Sparkles, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const [messages, setMessages] = useState([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: "Hello! I'm your AI Pest Control Assistant. How can I help you today?",
-    },
+    { id: "welcome", role: "assistant", content: "Hello! I'm your AI Pest Control Assistant. How can I help you today?" },
   ]);
 
   const [inputValue, setInputValue] = useState("");
@@ -26,7 +23,6 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sendMessage = useSendMessage();
 
-  // New state for role and map
   const [role, setRole] = useState<"regular" | "business">("regular");
   const [map, setMap] = useState<L.Map | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -36,7 +32,7 @@ export default function Home() {
       setLocation(null);
       return;
     }
-    if (!navigator.geolocation) return alert("Geolocation not supported by your browser.");
+    if (!navigator.geolocation) return alert("Geolocation not supported.");
     setIsGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -52,14 +48,10 @@ export default function Home() {
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: "smooth",
-      });
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
     }
   }, [messages, sendMessage.isPending]);
 
-  // Initialize Leaflet map for business role
   useEffect(() => {
     if (role === "business" && mapRef.current && !map) {
       const newMap = L.map(mapRef.current).setView([-1.286389, 36.817223], 13);
@@ -84,27 +76,19 @@ export default function Home() {
     if ((!inputValue.trim() && !selectedImage) || sendMessage.isPending) return;
 
     const geoContext = location ? `[User Location: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}] ` : "";
-    const userMsg = {
-      id: Date.now().toString(),
-      role: "user",
-      content: inputValue,
-      image: selectedImage
-    };
+    const userMsg = { id: Date.now().toString(), role: "user", content: inputValue, image: selectedImage };
 
     const updatedHistory = [...messages, userMsg];
     setMessages(updatedHistory);
     setInputValue("");
     setSelectedImage(null);
 
-    let aiContent;
-    if (selectedImage) {
-      aiContent = [
-        { type: "text", text: `${geoContext}${userMsg.content || "What is in this image?"}` },
-        { type: "image_url", image_url: { url: selectedImage } }
-      ];
-    } else {
-      aiContent = `${geoContext}${userMsg.content}`;
-    }
+    let aiContent = selectedImage
+      ? [
+          { type: "text", text: `${geoContext}${userMsg.content || "What is in this image?"}` },
+          { type: "image_url", image_url: { url: selectedImage } }
+        ]
+      : `${geoContext}${userMsg.content}`;
 
     try {
       const response = await sendMessage.mutateAsync({
@@ -113,24 +97,15 @@ export default function Home() {
         liveOnly: true,
         model: "google/gemini-flash-1.5",
       });
-
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now().toString(), role: "assistant", content: response.response },
-      ]);
-    } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        { id: "err", role: "error", content: "Connection error." },
-      ]);
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: "assistant", content: response.response }]);
+    } catch {
+      setMessages(prev => [...prev, { id: "err", role: "error", content: "Connection error." }]);
     }
   };
 
-  // Function to fetch and draw route
-  async function showRoute(origin, destination) {
+  async function showRoute(origin: {lat:number; lng:number}, destination: {lat:number; lng:number}) {
     const res = await fetch(`/api/route?originLat=${origin.lat}&originLng=${origin.lng}&destLat=${destination.lat}&destLng=${destination.lng}`);
     const data = await res.json();
-
     if (map && data.geometry) {
       L.geoJSON(data.geometry).addTo(map);
       alert(`ETA: ${data.durationMinutes} minutes, Distance: ${data.distanceKm} km`);
@@ -151,7 +126,6 @@ export default function Home() {
             <p className="text-xs text-gray-500">Smart Identification & Advice</p>
           </div>
         </div>
-        {/* Simple role toggle for demo */}
         <Button onClick={() => setRole(role === "regular" ? "business" : "regular")}>
           Switch to {role === "regular" ? "Business" : "Regular"} Mode
         </Button>
@@ -173,28 +147,40 @@ export default function Home() {
             </Button>
           </div>
         ) : (
-          // Existing chat UI
           <div className="flex-1 bg-white rounded-[2.5rem] shadow border flex flex-col relative overflow-hidden">
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-10 space-y-8">
               <AnimatePresence mode="popLayout">
-                {messages.map((msg) => (
-                  <ChatMessage key={msg.id} {...msg} />
-                ))}
-                {sendMessage.isPending && (
-                  <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
-                    <div className="flex gap-1.5 p-4 bg-[#F3F8F6] rounded-2xl rounded-bl-none">
-                      {[0, 1, 2].map((i) => (
-                        <motion.div key={i} className="w-2 h-2 bg-[#4AB295] rounded-full" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }} />
-                      ))}
-                    </div>
-                    <span className="text-xs font-bold text-[#4AB295] uppercase tracking-tighter">
-                      {location ? "Loading GeoSense" : "AI Analyzing"}
-                    </span>
-                  </motion.div>
-                )}
+                {messages.map((msg) => <ChatMessage key={msg.id} {...msg} />)}
               </AnimatePresence>
             </div>
             <div className="px-10 pb-10 pt-2 relative">
               <form onSubmit={handleSend} className="relative flex flex-col">
                 <div className="relative flex items-center">
-                  <input type="file" className="hidden" ref={fileInputRef}
+                  <input type="file" className="hidden" ref={fileInputRef} onChange={handleImageUpload} />
+                  <Input
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    placeholder={location ? "Localized GeoSense active..." : "Ask anything..."}
+                    className="w-full bg-[#F3F8F6] border-none rounded-full py-7 pl-14 pr-32 text-lg focus-visible:ring-1 focus-visible:ring-[#4AB295]"
+                  />
+                  <div className="absolute right-4 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={toggleGeoSense}
+                      className={`p-2 rounded-full transition-all duration-300 ${
+                        location
+                          ? "bg-[#4AB295] text-white shadow-md"
+                          : "bg-[#F3F8F6] text-[#4AB295] hover:bg-[#E8F0ED]"
+                      }`}
+                    >
+                      <motion.div
+                        animate={{ rotate: location ? 180 : 0 }}
+                        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                      >
+                        <Compass size={24} className={isGeoLoading ? "animate-spin" : ""} />
+                      </motion.div>
+                    </button>
+                    <Button
+                      type="submit"
+                      disabled={sendMessage.isPending}
+                      className="h-12 w-12 rounded-full bg-[#4AB295] hover:bg-[#3d967d] transition-colors
