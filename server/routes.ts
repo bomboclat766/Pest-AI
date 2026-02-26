@@ -3,11 +3,32 @@ import type { Server } from "http";
 import { api } from "@shared/routes";
 import { getLocalReply } from "./fallback";
 
+// Middleware to restrict access to business users
+function requireBusiness(req, res, next) {
+  if (req.user?.role !== "business") {
+    return res.status(403).json({ error: "Access denied" });
+  }
+  next();
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
 
+  // Simple login route for demo purposes
+  app.post("/api/login", (req, res) => {
+    const { code } = req.body;
+    if (code === "12345") {
+      // In a real app, you’d issue a JWT or session token here
+      req.user = { role: "business" };
+      return res.json({ success: true, role: "business" });
+    }
+    req.user = { role: "regular" };
+    return res.json({ success: true, role: "regular" });
+  });
+
+  // Chat status route
   app.get(api.chat.status.path, async (_req, res) => {
     res.json({
       openRouter: !!process.env.OPENROUTER_API_KEY,
@@ -15,6 +36,7 @@ export async function registerRoutes(
     });
   });
 
+  // Chat send route
   app.post(api.chat.send.path, async (req, res) => {
     try {
       const input = api.chat.send.input.parse(req.body);
@@ -67,7 +89,6 @@ export async function registerRoutes(
       } catch (aiErr: any) {
         if (liveOnly) return res.status(503).json({ message: "AI Unavailable" });
 
-        // FIX FOR RENDER BUILD: Ensure message is a string for the fallback function
         const fallbackQuery = typeof message === "string" 
           ? message 
           : (Array.isArray(message) ? (message.find(m => "text" in m) as any)?.text || "" : "");
@@ -82,6 +103,30 @@ export async function registerRoutes(
     }
   });
 
+  // Business-only route for OSRM routing
+  app.get("/api/route", requireBusiness, async (req, res) => {
+    const { originLat, originLng, destLat, destLng } = req.query;
+
+    try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${destLng},${destLat}?overview=full&geometries=geojson`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.routes?.[0]) {
+        const route = data.routes[0];
+        res.json({
+          durationMinutes: Math.round(route.duration / 60),
+          distanceKm: (route.distance / 1000).toFixed(2),
+          geometry: route.geometry
+        });
+      } else {
+        res.status(404).json({ error: "No route found" });
+      }
+    } catch (err) {
+      console.error("OSRM error:", err);
+      res.status(500).json({ error: "Routing failed" });
+    }
+  });
+
   return httpServer;
 }
-         
