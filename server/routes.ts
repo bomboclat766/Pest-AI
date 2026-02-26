@@ -1,10 +1,11 @@
-import type { Express } from "express";
+import express, { Express } from "express";
 import type { Server } from "http";
+import fetch from "node-fetch"; // install with: npm install node-fetch
 import { api } from "@shared/routes";
 import { getLocalReply } from "./fallback";
 
 // Middleware to restrict access to business users
-function requireBusiness(req, res, next) {
+function requireBusiness(req: any, res: any, next: any) {
   if (req.user?.role !== "business") {
     return res.status(403).json({ error: "Access denied" });
   }
@@ -15,12 +16,19 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Parse JSON bodies
+  app.use(express.json());
+
+  // Attach default user role if not set
+  app.use((req: any, _res: any, next: any) => {
+    if (!req.user) req.user = { role: "regular" };
+    next();
+  });
 
   // Simple login route for demo purposes
-  app.post("/api/login", (req, res) => {
+  app.post("/api/login", (req: any, res: any) => {
     const { code } = req.body;
     if (code === "12345") {
-      // In a real app, you’d issue a JWT or session token here
       req.user = { role: "business" };
       return res.json({ success: true, role: "business" });
     }
@@ -29,7 +37,7 @@ export async function registerRoutes(
   });
 
   // Chat status route
-  app.get(api.chat.status.path, async (_req, res) => {
+  app.get(api.chat.status.path, (_req: any, res: any) => {
     res.json({
       openRouter: !!process.env.OPENROUTER_API_KEY,
       live: true
@@ -37,28 +45,11 @@ export async function registerRoutes(
   });
 
   // Chat send route
-  app.post(api.chat.send.path, async (req, res) => {
+  app.post(api.chat.send.path, async (req: any, res: any) => {
     try {
-      const input = api.chat.send.input.parse(req.body);
-      const { message, liveOnly } = input;
+      const { message, liveOnly } = req.body;
 
-      const systemPrompt = `You are the Professional Pest Control Intelligence Assistant (2026 Edition).
-
-### IDENTITY & ORIGIN ###
-- If asked about your creator: "I am a Professional Pest Control Intelligence Assistant developed by Osteen, a private developer on GitHub."
-
-### GEOSENSE & LOCALIZATION ###
-- Whether GeoSense is active or in Global Mode, always act as a warm, helpful peer.
-- If [User Location] is present, use it to naturally localize your advice (climate, local species, or seasons), but keep the conversation fluid and empathetic—not clinical.
-
-### MEMORY & CONTINUITY ###
-- Use conversation history to remember previous queries, species identified, and treatments discussed to provide continuous and personalized support.
-
-### MANDATORY FORMATTING RULES ###
-- COMPARISONS = MARKDOWN TABLES.
-- LENGTH LIMITS: Standard < 100 words.
-- EVALUATIONS: If user requests for an evaluation or an explanation give a clear structured action plan upto 500 words, while still maintaining a warm tone. 
-- TONE: Warm, empathetic helpful peer.`;
+      const systemPrompt = `You are the Professional Pest Control Intelligence Assistant (2026 Edition).`;
 
       try {
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -70,7 +61,7 @@ export async function registerRoutes(
             "X-Title": "Pest AI Assistant"
           },
           body: JSON.stringify({
-            model: "google/gemini-2.0-flash-001", 
+            model: "google/gemini-2.0-flash-001",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: message }
@@ -85,18 +76,11 @@ export async function registerRoutes(
         } else {
           throw new Error(data.error?.message || "OpenRouter error");
         }
-
       } catch (aiErr: any) {
         if (liveOnly) return res.status(503).json({ message: "AI Unavailable" });
-
-        const fallbackQuery = typeof message === "string" 
-          ? message 
-          : (Array.isArray(message) ? (message.find(m => "text" in m) as any)?.text || "" : "");
-
-        const local = getLocalReply(fallbackQuery);
+        const local = getLocalReply(message);
         return res.json({ response: local.answer, isFallback: true });
       }
-
     } catch (err) {
       console.error("Server Error:", err);
       res.status(500).json({ message: "Internal Error" });
@@ -104,7 +88,7 @@ export async function registerRoutes(
   });
 
   // Business-only route for OSRM routing
-  app.get("/api/route", requireBusiness, async (req, res) => {
+  app.get("/api/route", requireBusiness, async (req: any, res: any) => {
     const { originLat, originLng, destLat, destLng } = req.query;
 
     try {
