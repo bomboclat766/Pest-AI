@@ -2,23 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/* LEAFLET MAP SUPPORT - Required for the black box fix */
+@import "leaflet/dist/leaflet.css";
+
 :root {
   --pest-primary: #4ab295;
   --pest-bg: #f8fbf9;
   --pest-dark: #1a3d35;
-  /* Prevents layout shift when scrollbar appears */
   scrollbar-gutter: stable;
 }
 
 body {
   background-color: var(--pest-bg);
   color: var(--pest-dark);
-  /* Standard professional sans-serif stack */
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Scrollbar Fix: Minimalist and non-intrusive */
+/* Fix for the "Black Box" Map issue */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 1rem;
+  z-index: 0 !important; /* Ensures map stays behind UI elements */
+  background: #f0f0f0;   /* Placeholder color while tiles load */
+}
+
+/* Ensure Leaflet attribution doesn't break layout */
+.leaflet-control-attribution {
+  font-size: 10px !important;
+}
+
+/* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -36,8 +51,17 @@ body {
   background: var(--pest-primary);
 }
 
-/* Ensure the chat container doesn't bounce */
+/* Chat container behavior */
 .overflow-y-auto {
-  overflow-y: overlay; 
+  scrollbar-width: thin;
   scroll-behavior: smooth;
+}
+
+/* Image Preview Styling for Chat */
+.chat-image-preview {
+  max-width: 200px;
+  border-radius: 0.75rem;
+  margin-top: 0.5rem;
+  border: 2px solid white;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
