@@ -60,29 +60,40 @@ export default function Home() {
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || sendMessage.isPending) return;
 
     const userMsg = { id: Date.now().toString(), role: "user" as const, content: inputValue };
     
-    // FIX 1: Update UI immediately
+    // Update UI immediately for user experience
     setMessages(prev => [...prev, userMsg]);
     const currentInput = inputValue;
     setInputValue("");
 
     try {
-      const response = await sendMessage.mutateAsync({
+      // Calling your actual API route via the hook
+      const result = await sendMessage.mutateAsync({
         message: currentInput,
+        // Mapping history to match the OpenRouter format expected by your backend
         history: messages.map(m => ({ role: m.role, content: m.content })),
         model: "google/gemini-2.0-flash-001",
       });
 
-      setMessages(prev => [...prev, { 
-        id: (Date.now() + 1).toString(), 
-        role: "assistant", 
-        content: response.response 
-      }]);
+      // Adding the live AI response to the chat box
+      if (result && result.response) {
+        setMessages(prev => [...prev, { 
+          id: (Date.now() + 1).toString(), 
+          role: "assistant", 
+          content: result.response 
+        }]);
+      }
     } catch (err) {
       console.error("Chat Error:", err);
+      // Optional: Add an error message to the chat so the user knows it failed
+      setMessages(prev => [...prev, { 
+        id: Date.now().toString(), 
+        role: "assistant", 
+        content: "I'm having trouble connecting to my brain right now. Please check your API key!" 
+      }]);
     }
   };
 
@@ -161,6 +172,13 @@ export default function Home() {
               <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6 scroll-smooth">
                 <AnimatePresence mode="popLayout">
                   {messages.map(m => <ChatMessage key={m.id} {...m} />)}
+                  {sendMessage.isPending && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                      <div className="bg-[#F3F8F6] p-4 rounded-2xl text-[#4AB295] text-sm animate-pulse font-bold">
+                        AI is thinking...
+                      </div>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
               </div>
 
@@ -174,10 +192,10 @@ export default function Home() {
                     className="border-none bg-transparent shadow-none focus-visible:ring-0 text-md placeholder:text-gray-400" 
                   />
                   <Compass className="text-gray-400 mx-2 hover:text-[#4AB295] cursor-pointer transition-colors" size={20}/>
-                  {/* FIX 2: Green Send Button (No Black Circle) */}
                   <Button 
                     type="submit" 
-                    className="rounded-full bg-[#4AB295] hover:bg-[#3d967d] w-10 h-10 p-0 shadow-lg shadow-[#4AB295]/20 flex items-center justify-center transition-transform active:scale-95"
+                    disabled={sendMessage.isPending}
+                    className="rounded-full bg-[#4AB295] hover:bg-[#3d967d] w-10 h-10 p-0 shadow-lg shadow-[#4AB295]/20 flex items-center justify-center transition-transform active:scale-95 disabled:opacity-50"
                   >
                     <Send size={18} className="text-white ml-0.5" />
                   </Button>
@@ -188,7 +206,6 @@ export default function Home() {
         </main>
       </div>
 
-      {/* LOGIN DIALOG */}
       <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
         <DialogContent className="sm:max-w-[400px] rounded-[2.5rem] p-8">
           <DialogHeader className="flex flex-col items-center">
