@@ -1,12 +1,12 @@
+@import "leaflet/dist/leaflet.css";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* LEAFLET MAP SUPPORT - Required for the black box fix */
-@import "leaflet/dist/leaflet.css";
-
 /* Google Sans Flex Font Import - Matching Gemini */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* Gemini-style CSS Custom Properties */
 :root {
@@ -81,14 +81,23 @@ body {
   background: rgba(68, 71, 70, 0.5);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--marwabuddy-primary);
-}
-
 /* Custom scrollbar for chat container */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(26, 26, 26, 0.3) transparent;
+  scrollbar-color: rgba(68, 71, 70, 0.5) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(68, 71, 70, 0.5);
+  border-radius: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(68, 71, 70, 0.7);
 }
 
 .scrollbar-thin::-webkit-scrollbar {
