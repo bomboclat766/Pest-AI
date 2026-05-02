@@ -7,42 +7,43 @@
 
 @layer base {
   body {
-    @apply bg-[#F0F2F5] text-slate-900 antialiased;
+    /* Updated to match the refined canvas color from app.tsx */
+    @apply bg-[#F8F9FA] text-slate-900 antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 }
 
-/* LEAFLET MAP SUPPORT - Keeping map behind UI */
+/* LEAFLET MAP SUPPORT */
 .leaflet-container {
-  @apply w-full h-full rounded-xl z-0 bg-slate-100 !important;
+  @apply w-full h-full rounded-3xl z-0 bg-slate-100 !important;
 }
 
 .leaflet-control-attribution {
-  @apply text-[10px] !important;
+  @apply text-[10px] opacity-50 !important;
 }
 
-/* SCROLLBARS - Clean, Mac-style */
+/* SCROLLBARS - Clean & Minimal */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 rounded-full;
+  @apply bg-slate-200 rounded-full transition-colors;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-400;
+  @apply bg-slate-300;
 }
 
-/* Custom scrollbar for chat container */
+/* Scrollbar for the textarea and chat container */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  @apply scrollbar-color-slate-200-transparent;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -50,35 +51,36 @@
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 rounded-full;
+  @apply bg-slate-200 rounded-full;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  @apply bg-blue-500;
+  @apply bg-blue-400;
 }
 
-/* Chat container behavior */
-.overflow-y-auto {
-  scroll-behavior: smooth;
+/* Typography & Layout Polish */
+.prose {
+  @apply max-w-none;
 }
 
-/* Loading animation for thinking state */
+/* Thinking/Loading State */
 @keyframes thinking-pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.3;
-  }
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 0.4; }
 }
 
 .thinking-animation {
-  animation: thinking-pulse 2s ease-in-out infinite;
+  @apply inline-block;
+  animation: thinking-pulse 1.5s ease-in-out infinite;
 }
 
-/* Image Preview Styling for Chat */
+/* Chat Image Visuals */
 .chat-image-preview {
-  @apply max-w-[200px] rounded-xl mt-2 border-2 border-white shadow-md;
+  @apply max-w-[280px] rounded-2xl mt-3 border border-slate-100 shadow-sm transition-transform hover:scale-[1.02];
+}
+
+/* Smooth content transitions */
+.overflow-y-auto {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
