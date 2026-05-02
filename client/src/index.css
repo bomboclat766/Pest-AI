@@ -43,18 +43,66 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d1dfd9;
+  background: rgba(74, 178, 149, 0.3);
   border-radius: 10px;
+  transition: background-color 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--marwabuddy-primary);
 }
 
+/* Custom scrollbar for chat container */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 178, 149, 0.3) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(74, 178, 149, 0.3);
+  border-radius: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--marwabuddy-primary);
+}
+
+/* Smooth animations */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
 /* Chat container behavior */
 .overflow-y-auto {
-  scrollbar-width: thin;
   scroll-behavior: smooth;
+}
+
+/* Enhanced focus states */
+.focus-visible:focus-visible {
+  outline: 2px solid var(--marwabuddy-primary);
+  outline-offset: 2px;
+}
+
+/* Loading animation for thinking state */
+@keyframes thinking-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.3;
+  }
+}
+
+.thinking-animation {
+  animation: thinking-pulse 2s ease-in-out infinite;
 }
 
 /* Image Preview Styling for Chat */

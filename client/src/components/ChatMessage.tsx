@@ -39,15 +39,42 @@ export function ChatMessage({ role, content = "", image }: ChatMessageProps) {
       <div className="relative flex-shrink-0 mt-1">
         {!isUser && !isError && (
           <motion.div
-            animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.1, 0.4] }}
-            transition={{ repeat: Infinity, duration: 3 }}
+            animate={{
+              scale: [1, 1.4, 1],
+              opacity: [0.3, 0.1, 0.3],
+              rotate: [0, 5, -5, 0]
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 2.5,
+              ease: "easeInOut"
+            }}
+            className="absolute inset-0 bg-gradient-to-r from-[#4AB295] to-[#3a8a75] rounded-full blur-lg"
+          />
+        )}
+        {!isUser && !isError && (
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.6, 0.2, 0.6]
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 1.8,
+              ease: "easeInOut",
+              delay: 0.3
+            }}
             className="absolute inset-0 bg-[#4AB295] rounded-full blur-md"
           />
         )}
-        <div className={cn(
-          "relative w-9 h-9 rounded-full flex items-center justify-center shadow-sm z-10",
-          isUser ? "bg-[#4AB295] text-white" : "bg-white border border-gray-100 text-[#4AB295]"
-        )}>
+        <motion.div
+          className={cn(
+            "relative w-9 h-9 rounded-full flex items-center justify-center shadow-sm z-10",
+            isUser ? "bg-[#4AB295] text-white" : "bg-white border border-gray-100 text-[#4AB295]"
+          )}
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
           {isUser ? <User size={18} /> : isError ? <Info size={18} className="text-red-500" /> : <Bot size={18} />}
         </div>
       </div>
