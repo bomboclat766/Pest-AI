@@ -54,87 +54,70 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4 md:p-8 flex flex-col items-center">
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full max-w-4xl flex justify-center items-center mb-8"
-      >
-        <div className="flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-lg border border-gray-200">
-          <motion.div
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-          >
-            <div className="bg-black p-2 rounded-xl text-white shadow-md">
-              <Sparkles size={24}/>
-            </div>
-          </motion.div>
-          <h1 className="text-2xl font-bold text-black tracking-tight">MarwaBuddy</h1>
-          <span className="text-sm text-gray-600 font-medium">Your friendly AI peer</span>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Simple Header */}
+      <header className="flex items-center justify-center py-4 px-6 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <Sparkles size={16} className="text-white" />
+          </div>
+          <h1 className="text-xl font-medium text-gray-900">MarwaBuddy</h1>
         </div>
-      </motion.header>
+      </header>
 
-      <motion.main
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="w-full max-w-4xl bg-white/95 backdrop-blur-sm rounded-[2.5rem] shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
-        style={{ height: "calc(100vh - 200px)", minHeight: "600px", maxHeight: "800px" }}
-      >
-        <motion.div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto p-8 space-y-6 scrollbar-thin scrollbar-thumb-black/20 scrollbar-track-transparent"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          <AnimatePresence mode="pop">
-            {messages.map((m, index) => (
-              <motion.div
-                key={m.id}
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{
-                  duration: 0.4,
-                  delay: index * 0.1,
-                  ease: "easeOut"
-                }}
-              >
-                <ChatMessage {...m} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+        {/* Messages Container */}
+        <div className="flex-1 overflow-y-auto px-6 py-8">
+          <div className="max-w-3xl mx-auto space-y-6">
+            <AnimatePresence mode="pop">
+              {messages.map((m, index) => (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{
+                    duration: 0.3,
+                    delay: index * 0.05,
+                    ease: "easeOut"
+                  }}
+                >
+                  <ChatMessage {...m} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
 
-        <motion.div
-          className="p-6 border-t border-gray-200 bg-gray-50/50 backdrop-blur-sm"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <form onSubmit={handleSend} className="bg-white rounded-2xl flex items-center px-6 py-4 border border-gray-200 shadow-inner">
-            <Plus size={20} className="text-black mr-3 transition-transform hover:scale-110" />
-            <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask me anything..."
-              className="border-none bg-transparent focus-visible:ring-0 text-gray-900 placeholder:text-gray-500 text-lg"
-              disabled={sendMessage.isPending}
-            />
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                type="submit"
-                className="rounded-xl bg-black hover:bg-gray-800 w-12 h-12 p-0 shadow-lg transition-all duration-200 disabled:opacity-50"
-                disabled={!inputValue.trim() || sendMessage.isPending}
-              >
-                <Send size={20} className="text-white" />
-              </Button>
-            </motion.div>
-          </form>
-        </motion.div>
-      </motion.main>
+        {/* Input Area */}
+        <div className="border-t border-gray-100 bg-white px-6 py-4">
+          <div className="max-w-3xl mx-auto">
+            <form onSubmit={handleSend} className="relative">
+              <div className="flex items-center bg-gray-50 rounded-full border border-gray-200 px-4 py-3 focus-within:border-gray-300 focus-within:ring-1 focus-within:ring-gray-300 transition-all">
+                <Plus size={18} className="text-gray-400 mr-3 flex-shrink-0" />
+                <Input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Ask me anything..."
+                  className="border-none bg-transparent focus-visible:ring-0 text-gray-900 placeholder:text-gray-500 flex-1"
+                  disabled={sendMessage.isPending}
+                />
+                <Button
+                  type="submit"
+                  className="rounded-full bg-black hover:bg-gray-800 w-8 h-8 p-0 flex-shrink-0 ml-2 transition-colors disabled:opacity-50"
+                  disabled={!inputValue.trim() || sendMessage.isPending}
+                >
+                  <Send size={16} className="text-white" />
+                </Button>
+              </div>
+            </form>
+            <p className="text-xs text-gray-500 text-center mt-3">
+              MarwaBuddy can make mistakes. Check important info.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

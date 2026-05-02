@@ -24,83 +24,51 @@ export function ChatMessage({ role, content = "", image }: ChatMessageProps) {
         setDisplayedContent(safeContent.slice(0, index + 1));
         index++;
         if (index >= safeContent.length) clearInterval(intervalId);
-      }, 4); 
+      }, 3);
       return () => clearInterval(intervalId);
     }
     setDisplayedContent(safeContent);
   }, [safeContent, isUser, isError]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15, filter: "blur(8px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      className={cn("flex w-full gap-4 mb-10", isUser ? "flex-row-reverse" : "flex-row")}
-    >
-      <div className="relative flex-shrink-0 mt-1">
-        {!isUser && !isError && (
-          <motion.div
-            animate={{
-              scale: [1, 1.4, 1],
-              opacity: [0.3, 0.1, 0.3],
-              rotate: [0, 5, -5, 0]
-            }}
-            transition={{
-              repeat: Infinity,
-              duration: 2.5,
-              ease: "easeInOut"
-            }}
-            className="absolute inset-0 bg-gradient-to-r from-black to-gray-800 rounded-full blur-lg"
-          />
-        )}
-        {!isUser && !isError && (
-          <motion.div
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.6, 0.2, 0.6]
-            }}
-            transition={{
-              repeat: Infinity,
-              duration: 1.8,
-              ease: "easeInOut",
-              delay: 0.3
-            }}
-            className="absolute inset-0 bg-black rounded-full blur-md"
-          />
-        )}
-        <motion.div
-          className={cn(
-            "relative w-9 h-9 rounded-full flex items-center justify-center shadow-sm z-10",
-            isUser ? "bg-black text-white" : "bg-white border border-gray-200 text-black"
-          )}
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
-          {isUser ? <User size={18} /> : isError ? <Info size={18} className="text-red-500" /> : <Bot size={18} />}
+    <div className={`flex gap-4 max-w-3xl ${isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}>
+      {/* Avatar */}
+      <div className="flex-shrink-0 mt-1">
+        <div className={cn(
+          "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+          isUser ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
+        )}>
+          {isUser ? "You" : "MB"}
         </div>
       </div>
 
-      <div className={cn("flex flex-col max-w-[85%]", isUser && "items-end")}>
+      {/* Message Content */}
+      <div className={`flex-1 ${isUser ? 'text-right' : 'text-left'}`}>
         <div className={cn(
-          "transition-all duration-500",
-          isUser ? "bg-[#f0f4f9] px-5 py-3 rounded-[24px] text-gray-800 shadow-sm" : "text-gray-800 pt-1"
+          "inline-block px-4 py-2 rounded-2xl max-w-full",
+          isUser
+            ? "bg-blue-600 text-white"
+            : isError
+            ? "bg-red-50 text-red-800 border border-red-200"
+            : "text-gray-900"
         )}>
           {isUser && image && (
-            <div className="mb-3 overflow-hidden rounded-xl max-w-[280px] shadow-md border-2 border-white">
-              <img src={image} alt="Chat response image" className="w-full object-cover" />
+            <div className="mb-2">
+              <img src={image} alt="User uploaded image" className="max-w-xs rounded-lg" />
             </div>
           )}
-          <div className="prose prose-emerald max-w-none assistant-response">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedContent}</ReactMarkdown>
-            {!isUser && !isError && displayedContent.length < safeContent.length && (
-              <motion.span
-                animate={{ opacity: [0, 1, 0] }}
-                transition={{ repeat: Infinity, duration: 0.8 }}
-                className="inline-block w-2 h-5 bg-[#4AB295] ml-1 translate-y-1"
-              />
-            )}
+
+          <div className="prose prose-sm max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {displayedContent}
+            </ReactMarkdown>
           </div>
+
+          {!isUser && !isError && displayedContent.length < safeContent.length && (
+            <span className="inline-block w-1 h-4 bg-gray-400 ml-1 animate-pulse" />
+          )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
