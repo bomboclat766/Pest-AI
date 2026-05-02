@@ -21,7 +21,7 @@ export default function Home() {
     {
       id: "welcome",
       role: "assistant",
-      content: "Hello! Welcome to Termipest Limited. How can we help you with your pest control needs today?",
+      content: "Hello! Welcome to MarwaBuddy. How can I help you with anything today?",
     }
   ]);
   const [inputValue, setInputValue] = useState("");

@@ -59,7 +59,7 @@ export function ChatMessage({ role, content = "", image }: ChatMessageProps) {
         )}>
           {isUser && image && (
             <div className="mb-3 overflow-hidden rounded-xl max-w-[280px] shadow-md border-2 border-white">
-              <img src={image} alt="Pest" className="w-full object-cover" />
+              <img src={image} alt="Chat response image" className="w-full object-cover" />
             </div>
           )}
           <div className="prose prose-emerald max-w-none assistant-response">

@@ -1,10 +1,10 @@
 import { getLocalReply } from './fallback';
 
 const queries = [
-  `I found small brown droppings behind my kitchen cabinets, small holes in wooden skirting, and occasional rust-colored stains on walls. Pets sometimes scratch at night. Provide a differential diagnosis (most likely pests), key diagnostic signs to inspect, immediate containment steps, recommended short-term and long-term treatments (chemical and non-chemical), safety precautions for pets and children, and quick references relevant to Kenya.`,
-  `Design a 6-month integrated pest management (IPM) plan for a medium-sized commercial bakery in Nairobi dealing with rodents, flour moths, and phorid flies. Include monitoring/inspection schedule, sanitation protocols, proofing/exclusion measures, baiting/trapping strategy, targeted insecticide classes if necessary, staff training schedule, record-keeping metrics, and success criteria.`,
-  `Compare three classes of insecticides for German cockroach control: pyrethroids, carbamates, and insect growth regulators. For each: mode of action, typical residual life, effectiveness against populations with known resistance, resistance management tips, mixing/application restrictions, required PPE, and safe disposal notes.`,
-  `A homeowner asks about making homemade poison baits using toxins found at a farm, but has young children. Provide a safety-first answer: legal and ethical considerations, safer alternatives, step-by-step safe implementation only if absolutely necessary, and guidance for communicating risk to the homeowner.`
+  `What's the fastest way to improve my morning routine so I feel more focused, energized, and ready for work? Provide practical habits, timing suggestions, and a simple weekly plan.`,
+  `Design a 3-month learning plan to become conversational in Spanish, including weekly goals, practice activities, and recommended resources.`,
+  `Compare three popular productivity methods for knowledge workers: Pomodoro Technique, Getting Things Done, and time blocking. Explain when each is best and how to get started.`,
+  `A friend is nervous about public speaking at a team meeting. Give practical tips, a warm confidence-building routine, and simple strategies to stay calm.`
 ];
 
 for (let i = 0; i < queries.length; i++) {

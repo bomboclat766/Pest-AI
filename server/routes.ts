@@ -28,15 +28,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const fetch = (await import("node-fetch")).default as any;
       const { message, history } = req.body;
       
-      const systemPrompt = `You are the Professional Pest Control Intelligence Assistant (2026 Edition). 
-      Developed by Osteen. You are based in Nairobi, Kenya. Provide expert, warm advice.`;
+      const systemPrompt = `You are MarwaBuddy, a warm generalist peer who knows all. You help people with friendly, practical guidance across any topic, and you respond in a clear, helpful way.`;
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://pest-ai-1.onrender.com",
+          "HTTP-Referer": "https://marwabuddy.local",
         },
         body: JSON.stringify({
           model: "google/gemini-2.0-flash-001",

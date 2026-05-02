@@ -1,8 +1,8 @@
-# Termipest AI Assistant
+# MarwaBuddy
 
 ## Overview
 
-A pest control AI chatbot application for Termipest Limited, a professional pest control company based in Kenya. The application provides an intelligent chat interface where users can ask questions about pest identification, prevention, and treatment. The system uses Google's Gemini AI through Replit's AI Integrations service, with a local fallback mechanism for when AI services are unavailable.
+A friendly generalist AI chatbot application. The interface lets users ask questions across many topics and receive warm, practical guidance. The system uses Google's Gemini AI through Replit's AI Integrations service, with a local fallback mechanism for when AI services are unavailable.
 
 ## User Preferences
 
@@ -31,7 +31,7 @@ Key endpoints:
 
 The backend implements a dual-response strategy:
 1. Primary: Google Gemini AI via Replit's AI Integrations
-2. Fallback: Local rule-based responses for common pest control queries
+2. Fallback: Local rule-based responses for generic generalist questions
 
 ### Data Storage
 - **ORM**: Drizzle ORM with PostgreSQL dialect
@@ -48,7 +48,7 @@ The application uses Replit's AI Integrations service which provides Gemini-comp
 - `AI_INTEGRATIONS_GEMINI_API_KEY` - API key from Replit
 - `AI_INTEGRATIONS_GEMINI_BASE_URL` - Custom base URL for the service
 
-A comprehensive system prompt defines the AI's persona as "Termipest Assistant" with specific formatting rules for responses including Markdown tables, safety callouts, and executive summaries.
+A comprehensive system prompt defines the AI's persona as MarwaBuddy with warm, helpful guidance, including Markdown tables, safety callouts, and clear summaries.
 
 ### Code Organization
 ```

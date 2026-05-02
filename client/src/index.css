@@ -6,15 +6,15 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  --pest-primary: #4ab295;
-  --pest-bg: #f8fbf9;
-  --pest-dark: #1a3d35;
+  --marwabuddy-primary: #4ab295;
+  --marwabuddy-bg: #f8fbf9;
+  --marwabuddy-dark: #1a3d35;
   scrollbar-gutter: stable;
 }
 
 body {
-  background-color: var(--pest-bg);
-  color: var(--pest-dark);
+  background-color: var(--marwabuddy-bg);
+  color: var(--marwabuddy-dark);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -48,7 +48,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--pest-primary);
+  background: var(--marwabuddy-primary);
 }
 
 /* Chat container behavior */

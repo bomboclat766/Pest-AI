@@ -9,11 +9,11 @@ export function Header() {
         </div>
         
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight drop-shadow-sm">
-          PestControl AI
+          MarwaBuddy
         </h1>
         
         <p className="text-primary-foreground/90 font-medium text-sm md:text-base max-w-md leading-relaxed">
-          Intelligent Pest Identification & Prevention Advisor
+          Friendly generalist peer who knows all
         </p>
       </div>
     </header>

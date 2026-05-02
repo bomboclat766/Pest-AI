@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
-  const [messages, setMessages] = useState([{ id: "w", role: "assistant", content: "Hello! I'm your AI Pest Control Assistant. How can I help you today?" }]);
+  const [messages, setMessages] = useState([{ id: "w", role: "assistant", content: "Hello! I'm MarwaBuddy, your friendly generalist peer. How can I help you today?" }]);
   const [inputValue, setInputValue] = useState("");
   const [role, setRole] = useState<"regular" | "business">("regular");
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -78,8 +78,8 @@ export default function Home() {
   const submitLead = async () => {
     const lead = {
       name: "Client via AI",
-      email: "chat-user@pestai.com",
-      pestType: "Fumigation Request",
+      email: "chat-user@marwabuddy.com",
+      pestType: "General Inquiry",
       lat: "-1.2863",
       lng: "36.8172",
       message: "Pinned via Dispatch Toolbox"
@@ -103,7 +103,7 @@ export default function Home() {
       <header className="w-full max-w-7xl flex justify-between items-center mb-8">
         <div className="flex items-center gap-2">
           <div className="bg-[#4AB295] p-2 rounded-lg text-white"><Sparkles size={20}/></div>
-          <h1 className="text-xl font-bold text-[#1A3D35]">PestControl<span className="text-[#4AB295]">AI</span></h1>
+          <h1 className="text-xl font-bold text-[#1A3D35]">MarwaBuddy</h1>
         </div>
         <Button variant="outline" className="rounded-full border-[#4AB295]" onClick={() => role === "regular" ? setIsAuthOpen(true) : setRole("regular")}>
           <Briefcase size={16} className="mr-2"/> {role === "regular" ? "Business Login" : "User View"}
