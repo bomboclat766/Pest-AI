@@ -6,9 +6,9 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  --marwabuddy-primary: #4ab295;
-  --marwabuddy-bg: #f8fbf9;
-  --marwabuddy-dark: #1a3d35;
+  --marwabuddy-primary: #1a1a1a;
+  --marwabuddy-bg: #ffffff;
+  --marwabuddy-dark: #000000;
   scrollbar-gutter: stable;
 }
 
@@ -43,7 +43,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(74, 178, 149, 0.3);
+  background: rgba(26, 26, 26, 0.3);
   border-radius: 10px;
   transition: background-color 0.3s ease;
 }
@@ -55,7 +55,7 @@ body {
 /* Custom scrollbar for chat container */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(74, 178, 149, 0.3) transparent;
+  scrollbar-color: rgba(26, 26, 26, 0.3) transparent;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -63,7 +63,7 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(74, 178, 149, 0.3);
+  background: rgba(26, 26, 26, 0.3);
   border-radius: 10px;
 }
 
