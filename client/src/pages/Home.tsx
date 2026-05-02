@@ -71,13 +71,13 @@ export default function Home() {
           <h1 className="font-bold text-lg tracking-tight hidden md:block">MarwaBuddy</h1>
         </div>
 
-        <Button variant="ghost" className="w-full justify-center md:justify-start gap-3 rounded-xl py-6 mb-2 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-100">
+        <Button variant="ghost" className="w-full justify-center md:justify-start gap-3 rounded-xl py-6 mb-2 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-100 outline-none ring-0">
           <Plus size={20} className="text-slate-600" /> 
           <span className="font-medium hidden md:block text-slate-600">New Session</span>
         </Button>
 
         <div className="mt-auto space-y-2">
-          <Button variant="ghost" size="icon" className="w-full md:w-auto md:px-3 md:justify-start gap-3 text-slate-500 hover:text-blue-600">
+          <Button variant="ghost" size="icon" className="w-full md:w-auto md:px-3 md:justify-start gap-3 text-slate-500 hover:text-blue-600 outline-none ring-0">
             <Settings2 size={20} /> <span className="hidden md:block text-sm font-medium">Settings</span>
           </Button>
           <div className="pt-4 border-t border-slate-100 flex items-center gap-3 px-2">
@@ -115,7 +115,7 @@ export default function Home() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.1 }}
                       onClick={() => setInputValue(s.label)}
-                      className="p-6 bg-white border border-slate-200/60 rounded-3xl text-left hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all group"
+                      className="p-6 bg-white border border-slate-200/60 rounded-3xl text-left hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all group outline-none ring-0"
                     >
                       <div className={`${s.bg} w-10 h-10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                         <s.icon className={s.color} size={20} />
@@ -133,12 +133,12 @@ export default function Home() {
                   key={m.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex gap-6 max-w-3xl"
+                  className="flex gap-6 max-w-3xl outline-none ring-0"
                 >
                   <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center mt-1 ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 shadow-sm'}`}>
                     {m.role === 'user' ? <span className="text-[10px] font-bold">OS</span> : <Sparkles size={14} className="text-blue-500" />}
                   </div>
-                  <div className="flex-1 pt-1.5 prose prose-slate max-w-none text-slate-800 text-[15px] leading-relaxed">
+                  <div className="flex-1 pt-1.5 prose prose-slate max-w-none text-slate-800 text-[15px] leading-relaxed outline-none ring-0">
                     <ChatMessage {...m} />
                   </div>
                 </motion.div>
@@ -152,20 +152,20 @@ export default function Home() {
           <div className="max-w-3xl mx-auto">
             <form 
               onSubmit={handleSend}
-              className="flex items-end gap-2 p-2 bg-white border border-slate-200/80 rounded-[32px] shadow-2xl shadow-slate-200/50 focus-within:border-blue-400 transition-all"
+              className="flex items-end gap-2 p-2 bg-white border border-slate-200/80 rounded-[32px] shadow-2xl shadow-slate-200/50 focus-within:border-blue-400 focus-within:ring-0 transition-all outline-none"
             >
               <textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                 placeholder="Ask MarwaBuddy anything..."
-                className="flex-1 bg-transparent border-none focus:ring-0 px-5 py-4 text-[15px] resize-none min-h-[60px] max-h-40 scrollbar-thin"
+                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none px-5 py-4 text-[15px] resize-none min-h-[60px] max-h-40 scrollbar-thin outline-none"
                 rows={1}
               />
               <Button 
                 type="submit" 
                 disabled={!inputValue.trim() || sendMessage.isPending}
-                className="h-12 w-12 rounded-full bg-blue-600 hover:bg-blue-700 p-0 mb-1.5 mr-1.5 shadow-lg shadow-blue-600/20 active:scale-90 transition-transform"
+                className="h-12 w-12 rounded-full bg-blue-600 hover:bg-blue-700 p-0 mb-1.5 mr-1.5 shadow-lg shadow-blue-600/20 active:scale-90 transition-transform outline-none ring-0"
               >
                 {sendMessage.isPending ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={18} className="text-white" />}
               </Button>
