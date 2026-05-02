@@ -5,66 +5,26 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LEAFLET MAP SUPPORT - Required for the black box fix */
-/* Google Sans Flex Font Import - Matching Gemini */
-
-/* Gemini-style CSS Custom Properties */
-:root {
-  /* Typography - Google Sans Flex inspired */
-  --gemini-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-
-  /* Colors - Gemini inspired palette */
-  --gemini-surface: #ffffff;
-  --gemini-surface-variant: #f8f9fa;
-  --gemini-on-surface: #1f1f1f;
-  --gemini-on-surface-variant: #444746;
-  --gemini-primary: #0b57d0;
-  --gemini-primary-hover: #0842a0;
-  --gemini-outline: #dadce0;
-  --gemini-outline-hover: #bdc1c6;
-
-  /* Spacing - Gemini's spacing system */
-  --gemini-space-xs: 4px;
-  --gemini-space-s: 8px;
-  --gemini-space-m: 12px;
-  --gemini-space-l: 16px;
-  --gemini-space-xl: 20px;
-
-  /* Border radius - Gemini's corner system */
-  --gemini-radius-s: 8px;
-  --gemini-radius-m: 12px;
-  --gemini-radius-l: 16px;
-  --gemini-radius-xl: 28px;
-
-  scrollbar-gutter: stable;
+@layer base {
+  body {
+    @apply bg-[#F0F2F5] text-slate-900 antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
 }
 
-body {
-  background-color: var(--gemini-surface);
-  color: var(--gemini-on-surface);
-  font-family: var(--gemini-font-family);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5;
-}
-
-/* Fix for the "Black Box" Map issue */
+/* LEAFLET MAP SUPPORT - Keeping map behind UI */
 .leaflet-container {
-  width: 100%;
-  height: 100%;
-  border-radius: var(--gemini-radius-m);
-  z-index: 0 !important; /* Ensures map stays behind UI elements */
-  background: #f0f0f0;   /* Placeholder color while tiles load */
+  @apply w-full h-full rounded-xl z-0 bg-slate-100 !important;
 }
 
-/* Ensure Leaflet attribution doesn't break layout */
 .leaflet-control-attribution {
-  font-size: 10px !important;
+  @apply text-[10px] !important;
 }
 
-/* Scrollbar Styling - Gemini inspired */
+/* SCROLLBARS - Clean, Mac-style */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -72,19 +32,17 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(68, 71, 70, 0.3);
-  border-radius: 10px;
-  transition: background-color 0.3s ease;
+  @apply bg-slate-300 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(68, 71, 70, 0.5);
+  @apply bg-slate-400;
 }
 
 /* Custom scrollbar for chat container */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(68, 71, 70, 0.5) transparent;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -92,43 +50,16 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(68, 71, 70, 0.5);
-  border-radius: 10px;
+  @apply bg-slate-300 rounded-full;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(68, 71, 70, 0.7);
-}
-
-.scrollbar-thin::-webkit-scrollbar {
-  width: 4px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(26, 26, 26, 0.3);
-  border-radius: 10px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: var(--marwabuddy-primary);
-}
-
-/* Smooth animations */
-* {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  @apply bg-blue-500;
 }
 
 /* Chat container behavior */
 .overflow-y-auto {
   scroll-behavior: smooth;
-}
-
-/* Enhanced focus states */
-.focus-visible:focus-visible {
-  outline: 2px solid var(--marwabuddy-primary);
-  outline-offset: 2px;
 }
 
 /* Loading animation for thinking state */
@@ -149,9 +80,5 @@ body {
 
 /* Image Preview Styling for Chat */
 .chat-image-preview {
-  max-width: 200px;
-  border-radius: 0.75rem;
-  margin-top: 0.5rem;
-  border: 2px solid white;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  @apply max-w-[200px] rounded-xl mt-2 border-2 border-white shadow-md;
 }
