@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
-  const [messages, setMessages] = useState([{ id: "w", role: "assistant", content: "Hello! I'm MarwaBuddy, your friendly generalist peer. How can I help you today?" }]);
+  const [messages, setMessages] = useState<Array<{ id: string; role: "user" | "assistant" | "error"; content: string }>>([{ id: "w", role: "assistant", content: "Hello! I'm MarwaBuddy, your friendly generalist peer. How can I help you today?" }]);
   const [inputValue, setInputValue] = useState("");
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -41,7 +41,7 @@ export default function Home() {
     try {
       const result = await sendMessage.mutateAsync({
         message: currentInput,
-        history: messages.map(m => ({ role: m.role, content: m.content })),
+        liveOnly: false,
       });
 
       setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: result.response }]);
@@ -54,23 +54,27 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Simple Header */}
-      <header className="flex items-center justify-center py-4 px-6 border-b border-gray-100">
+    <div className="min-h-screen bg-[var(--gemini-surface)] flex flex-col">
+      {/* Gemini-style Header */}
+      <header className="flex items-center justify-center py-6 px-6 border-b border-[var(--gemini-outline)]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <Sparkles size={16} className="text-white" />
+          <div className="w-10 h-10 bg-gradient-to-br from-[var(--gemini-primary)] to-blue-600 rounded-full flex items-center justify-center shadow-sm">
+            <Sparkles size={20} className="text-white" />
           </div>
-          <h1 className="text-xl font-medium text-gray-900">MarwaBuddy</h1>
+          <h1 className="text-2xl font-medium text-[var(--gemini-on-surface)] tracking-tight">MarwaBuddy</h1>
         </div>
       </header>
 
-      {/* Main Chat Area */}
+      {/* Main Chat Area - Gemini inspired layout */}
       <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto px-6 py-8">
-          <div className="max-w-3xl mx-auto space-y-6">
-            <AnimatePresence mode="pop">
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto px-6 py-8"
+          style={{ scrollbarGutter: 'stable' }}
+        >
+          <div className="max-w-3xl mx-auto space-y-8">
+            <AnimatePresence mode="wait">
               {messages.map((m, index) => (
                 <motion.div
                   key={m.id}
@@ -90,29 +94,29 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Input Area */}
-        <div className="border-t border-gray-100 bg-white px-6 py-4">
+        {/* Input Area - Gemini inspired */}
+        <div className="border-t border-[var(--gemini-outline)] bg-[var(--gemini-surface)] px-6 py-6">
           <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSend} className="relative">
-              <div className="flex items-center bg-gray-50 rounded-full border border-gray-200 px-4 py-3 focus-within:border-gray-300 focus-within:ring-1 focus-within:ring-gray-300 transition-all">
-                <Plus size={18} className="text-gray-400 mr-3 flex-shrink-0" />
+              <div className="flex items-center bg-[var(--gemini-surface-variant)] rounded-full border border-[var(--gemini-outline)] px-6 py-4 focus-within:border-[var(--gemini-primary)] focus-within:ring-1 focus-within:ring-[var(--gemini-primary)] transition-all shadow-sm">
+                <Plus size={20} className="text-[var(--gemini-on-surface-variant)] mr-4 flex-shrink-0" />
                 <Input
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Ask me anything..."
-                  className="border-none bg-transparent focus-visible:ring-0 text-gray-900 placeholder:text-gray-500 flex-1"
+                  className="border-none bg-transparent focus-visible:ring-0 text-[var(--gemini-on-surface)] placeholder:text-[var(--gemini-on-surface-variant)] flex-1 text-base"
                   disabled={sendMessage.isPending}
                 />
                 <Button
                   type="submit"
-                  className="rounded-full bg-black hover:bg-gray-800 w-8 h-8 p-0 flex-shrink-0 ml-2 transition-colors disabled:opacity-50"
+                  className="rounded-full bg-[var(--gemini-primary)] hover:bg-[var(--gemini-primary-hover)] w-10 h-10 p-0 flex-shrink-0 ml-4 transition-colors disabled:opacity-50 shadow-sm"
                   disabled={!inputValue.trim() || sendMessage.isPending}
                 >
-                  <Send size={16} className="text-white" />
+                  <Send size={18} className="text-white" />
                 </Button>
               </div>
             </form>
-            <p className="text-xs text-gray-500 text-center mt-3">
+            <p className="text-sm text-[var(--gemini-on-surface-variant)] text-center mt-4">
               MarwaBuddy can make mistakes. Check important info.
             </p>
           </div>

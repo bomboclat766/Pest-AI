@@ -5,25 +5,54 @@
 /* LEAFLET MAP SUPPORT - Required for the black box fix */
 @import "leaflet/dist/leaflet.css";
 
+/* Google Sans Flex Font Import - Matching Gemini */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Gemini-style CSS Custom Properties */
 :root {
-  --marwabuddy-primary: #1a1a1a;
-  --marwabuddy-bg: #ffffff;
-  --marwabuddy-dark: #000000;
+  /* Typography - Google Sans Flex inspired */
+  --gemini-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Colors - Gemini inspired palette */
+  --gemini-surface: #ffffff;
+  --gemini-surface-variant: #f8f9fa;
+  --gemini-on-surface: #1f1f1f;
+  --gemini-on-surface-variant: #444746;
+  --gemini-primary: #0b57d0;
+  --gemini-primary-hover: #0842a0;
+  --gemini-outline: #dadce0;
+  --gemini-outline-hover: #bdc1c6;
+
+  /* Spacing - Gemini's spacing system */
+  --gemini-space-xs: 4px;
+  --gemini-space-s: 8px;
+  --gemini-space-m: 12px;
+  --gemini-space-l: 16px;
+  --gemini-space-xl: 20px;
+
+  /* Border radius - Gemini's corner system */
+  --gemini-radius-s: 8px;
+  --gemini-radius-m: 12px;
+  --gemini-radius-l: 16px;
+  --gemini-radius-xl: 28px;
+
   scrollbar-gutter: stable;
 }
 
 body {
-  background-color: var(--marwabuddy-bg);
-  color: var(--marwabuddy-dark);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--gemini-surface);
+  color: var(--gemini-on-surface);
+  font-family: var(--gemini-font-family);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
 }
 
 /* Fix for the "Black Box" Map issue */
 .leaflet-container {
   width: 100%;
   height: 100%;
-  border-radius: 1rem;
+  border-radius: var(--gemini-radius-m);
   z-index: 0 !important; /* Ensures map stays behind UI elements */
   background: #f0f0f0;   /* Placeholder color while tiles load */
 }
@@ -33,7 +62,7 @@ body {
   font-size: 10px !important;
 }
 
-/* Scrollbar Styling */
+/* Scrollbar Styling - Gemini inspired */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -43,9 +72,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(26, 26, 26, 0.3);
+  background: rgba(68, 71, 70, 0.3);
   border-radius: 10px;
   transition: background-color 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(68, 71, 70, 0.5);
 }
 
 ::-webkit-scrollbar-thumb:hover {

@@ -31,41 +31,43 @@ export function ChatMessage({ role, content = "", image }: ChatMessageProps) {
   }, [safeContent, isUser, isError]);
 
   return (
-    <div className={`flex gap-4 max-w-3xl ${isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}>
-      {/* Avatar */}
+    <div className={`flex gap-6 max-w-3xl ${isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}>
+      {/* Avatar - Gemini style */}
       <div className="flex-shrink-0 mt-1">
         <div className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-          isUser ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
+          "w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium shadow-sm",
+          isUser
+            ? "bg-[var(--gemini-primary)] text-white"
+            : "bg-[var(--gemini-surface-variant)] text-[var(--gemini-on-surface)] border border-[var(--gemini-outline)]"
         )}>
           {isUser ? "You" : "MB"}
         </div>
       </div>
 
-      {/* Message Content */}
+      {/* Message Content - Gemini inspired */}
       <div className={`flex-1 ${isUser ? 'text-right' : 'text-left'}`}>
         <div className={cn(
-          "inline-block px-4 py-2 rounded-2xl max-w-full",
+          "inline-block px-6 py-4 rounded-2xl max-w-full shadow-sm",
           isUser
-            ? "bg-blue-600 text-white"
+            ? "bg-[var(--gemini-primary)] text-white"
             : isError
             ? "bg-red-50 text-red-800 border border-red-200"
-            : "text-gray-900"
+            : "bg-[var(--gemini-surface)] text-[var(--gemini-on-surface)] border border-[var(--gemini-outline)]"
         )}>
           {isUser && image && (
-            <div className="mb-2">
-              <img src={image} alt="User uploaded image" className="max-w-xs rounded-lg" />
+            <div className="mb-3">
+              <img src={image} alt="User uploaded image" className="max-w-xs rounded-lg shadow-sm" />
             </div>
           )}
 
-          <div className="prose prose-sm max-w-none">
+          <div className="prose prose-sm max-w-none prose-headings:text-[var(--gemini-on-surface)] prose-p:text-[var(--gemini-on-surface)] prose-strong:text-[var(--gemini-on-surface)] prose-code:text-[var(--gemini-on-surface)] prose-pre:bg-[var(--gemini-surface-variant)] prose-pre:border prose-pre:border-[var(--gemini-outline)]">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {displayedContent}
             </ReactMarkdown>
           </div>
 
           {!isUser && !isError && displayedContent.length < safeContent.length && (
-            <span className="inline-block w-1 h-4 bg-gray-400 ml-1 animate-pulse" />
+            <span className="inline-block w-1 h-5 bg-[var(--gemini-on-surface-variant)] ml-1 animate-pulse" />
           )}
         </div>
       </div>
